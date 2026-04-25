@@ -1,9 +1,6 @@
 -- Datos de prueba - Tienda de Ropa
--- Cada tabla contiene al menos 25 registros
 
--- =========================================================
--- CATEGORIA (26 registros)
--- =========================================================
+-- CATEGORIA
 INSERT INTO categoria (nombre, descripcion) VALUES
   ('Camisas',         'Camisas formales, casuales y polos'),
   ('Pantalones',      'Jeans, chinos y pantalones de vestir'),
@@ -32,9 +29,7 @@ INSERT INTO categoria (nombre, descripcion) VALUES
   ('Gorras',          'Gorras de beisbol y snapback'),
   ('Ropa Deportiva',  'Uniformes y ropa atletica');
 
--- =========================================================
--- PROVEEDOR (26 registros)
--- =========================================================
+-- PROVEEDOR 
 INSERT INTO proveedor (nombre_empresa, contacto_nombre, telefono, email, direccion, ruc_nit) VALUES
   ('Textiles del Sur, S.A.',       'Mario Chavez',       '2345-1111', 'ventas@textilesur.gt',     'Zona 4, Ciudad de Guatemala', '900111222'),
   ('Moda Internacional GT',        'Laura Pineda',       '2345-2222', 'contacto@modaintl.gt',     'Zona 10, Ciudad de Guatemala','900333444'),
@@ -63,9 +58,7 @@ INSERT INTO proveedor (nombre_empresa, contacto_nombre, telefono, email, direcci
   ('Distribuidora Pacaya',         'Oscar Alonzo',       '2347-5555', 'oscar@pacaya.gt',          'Amatitlan',                   '904990001'),
   ('Textiles Globales, S.A.',      'Patricia Barrios',   '2347-6666', 'paty@globales.gt',         'Zona 17, Ciudad de Guatemala','905112223');
 
--- =========================================================
--- CLIENTE (28 registros)
--- =========================================================
+-- CLIENTE 
 INSERT INTO cliente (dni_nit, nombre, apellido, email, telefono, direccion, fecha_registro) VALUES
   ('1234567800101', 'Ana',       'Garcia',     'ana.garcia@mail.com',       '5555-0101', 'Zona 15, Guatemala',   '2026-01-10'),
   ('2345678900102', 'Carlos',    'Mendez',     'carlos.m@mail.com',         '5555-0102', 'Zona 11, Guatemala',   '2026-01-18'),
@@ -96,9 +89,7 @@ INSERT INTO cliente (dni_nit, nombre, apellido, email, telefono, direccion, fech
   ('1234567800127', 'Natalia',   'Flores',     'natalia.f@mail.com',        '5555-0127', 'Mixco',                '2026-04-03'),
   ('1234567800128', 'Jorge',     'Arevalo',    'jorge.a@mail.com',          '5555-0128', 'Villa Nueva',          '2026-04-05');
 
--- =========================================================
--- EMPLEADO (26 registros)
--- =========================================================
+-- EMPLEADO 
 INSERT INTO empleado (dni, nombre, apellido, email, telefono, puesto, salario, fecha_contratacion) VALUES
   ('9999111100101', 'Sofia',     'Alvarez',    'sofia.a@tienda.gt',    '4444-0001', 'Gerente',        8000.00, '2024-05-01'),
   ('9999222200102', 'Pedro',     'Ramirez',    'pedro.r@tienda.gt',    '4444-0002', 'Vendedor',       4500.00, '2025-01-15'),
@@ -127,9 +118,7 @@ INSERT INTO empleado (dni, nombre, apellido, email, telefono, puesto, salario, f
   ('9999555500125', 'Silvia',    'Orellana',   'silvia.o@tienda.gt',   '4444-0025', 'Asistente RH',   5500.00, '2025-03-01'),
   ('9999666600126', 'Rodrigo',   'Cerna',      'rodrigo.c@tienda.gt',  '4444-0026', 'Vendedor',       4500.00, '2026-01-20');
 
--- =========================================================
--- PRODUCTO (30 registros)
--- =========================================================
+-- PRODUCTO
 INSERT INTO producto (id_categoria, nombre, descripcion, talla, color, marca, genero, precio_venta, precio_costo, stock_actual, stock_minimo) VALUES
   (1,  'Camisa Oxford Blanca',     'Camisa formal de algodon',         'M',  'Blanco',      'Calvin',    'M',      180.00,  90.00, 50, 10),
   (1,  'Polo Deportiva Roja',      'Polo pique manga corta',           'L',  'Rojo',        'Lacoste',   'M',      150.00,  75.00, 30,  8),
@@ -162,9 +151,7 @@ INSERT INTO producto (id_categoria, nombre, descripcion, talla, color, marca, ge
   (26, 'Conjunto Deportivo',       'Conjunto deportivo top y short',   'M',  'Negro',       'Nike',      'F',      380.00, 190.00, 20,  5),
   (1,  'Camisa Cuadros Azul',      'Camisa casual manga larga',        'L',  'Azul',        'Tommy',     'M',      220.00, 110.00, 30,  8);
 
--- =========================================================
--- COMPRA (26 registros)
--- =========================================================
+-- COMPRA
 INSERT INTO compra (id_proveedor, id_empleado, fecha_compra, total, numero_factura, estado) VALUES
   ( 1,  1, '2026-02-10 10:00:00',  4200.00, 'FACT-2026-001', 'RECIBIDA'),
   ( 3,  1, '2026-02-12 11:30:00',  7400.00, 'FACT-2026-002', 'RECIBIDA'),
@@ -193,9 +180,7 @@ INSERT INTO compra (id_proveedor, id_empleado, fecha_compra, total, numero_factu
   (25, 20, '2026-04-12 15:20:00',  2900.00, 'FACT-2026-025', 'PENDIENTE'),
   (26,  1, '2026-04-15 10:00:00',  6300.00, 'FACT-2026-026', 'RECIBIDA');
 
--- =========================================================
--- DETALLE_COMPRA (30 registros, UNIQUE(id_compra, id_producto))
--- =========================================================
+-- DETALLE_COMPRA
 INSERT INTO detalle_compra (id_compra, id_producto, cantidad, precio_unitario) VALUES
   ( 1,  1, 30,  90.00),
   ( 1,  2, 20,  75.00),
@@ -228,9 +213,7 @@ INSERT INTO detalle_compra (id_compra, id_producto, cantidad, precio_unitario) V
   (23, 30, 20, 110.00),
   (24,  8, 30,  70.00);
 
--- =========================================================
--- VENTA (28 registros)
--- =========================================================
+-- VENTA
 INSERT INTO venta (id_cliente, id_empleado, fecha_venta, total, metodo_pago, estado) VALUES
   ( 1,  2, '2026-03-15 14:25:00',  400.00, 'EFECTIVO',      'PAGADA'),
   ( 2,  3, '2026-03-18 16:10:00', 1350.00, 'TARJETA',       'PAGADA'),
@@ -261,9 +244,7 @@ INSERT INTO venta (id_cliente, id_empleado, fecha_venta, total, metodo_pago, est
   (27,  3, '2026-04-19 14:00:00',  240.00, 'EFECTIVO',      'PAGADA'),
   (28,  5, '2026-04-20 11:05:00',  700.00, 'TARJETA',       'PAGADA');
 
--- =========================================================
--- DETALLE_VENTA (32 registros, UNIQUE(id_venta, id_producto))
--- =========================================================
+-- DETALLE_VENTA
 INSERT INTO detalle_venta (id_venta, id_producto, cantidad, precio_unitario) VALUES
   ( 1,  1, 1, 180.00),
   ( 1,  3, 1, 220.00),
@@ -298,9 +279,7 @@ INSERT INTO detalle_venta (id_venta, id_producto, cantidad, precio_unitario) VAL
   (16,  1, 1, 180.00),
   (16, 30, 1, 220.00);
 
--- =========================================================
--- MOVIMIENTO_INVENTARIO (28 registros)
--- =========================================================
+-- MOVIMIENTO_INVENTARIO 
 INSERT INTO movimiento_inventario (id_producto, tipo, cantidad, fecha, motivo, referencia_doc) VALUES
   ( 1, 'ENTRADA',    30, '2026-02-10 10:05:00', 'Recepcion de compra',       'COMPRA-1'),
   ( 2, 'ENTRADA',    20, '2026-02-10 10:10:00', 'Recepcion de compra',       'COMPRA-1'),
