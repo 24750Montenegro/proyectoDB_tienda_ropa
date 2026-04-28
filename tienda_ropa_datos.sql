@@ -59,7 +59,7 @@ INSERT INTO proveedor (nombre_empresa, contacto_nombre, telefono, email, direcci
   ('Textiles Globales, S.A.',      'Patricia Barrios',   '2347-6666', 'paty@globales.gt',         'Zona 17, Ciudad de Guatemala','905112223');
 
 -- CLIENTE 
-INSERT INTO cliente (dni_nit, nombre, apellido, email, telefono, direccion, fecha_registro) VALUES
+INSERT INTO cliente (dpi_nit, nombre, apellido, email, telefono, direccion, fecha_registro) VALUES
   ('1234567800101', 'Ana',       'Garcia',     'ana.garcia@mail.com',       '5555-0101', 'Zona 15, Guatemala',   '2026-01-10'),
   ('2345678900102', 'Carlos',    'Mendez',     'carlos.m@mail.com',         '5555-0102', 'Zona 11, Guatemala',   '2026-01-18'),
   ('3456789000103', 'Lucia',     'Rodriguez',  'lucia.r@mail.com',          '5555-0103', 'Mixco',                '2026-02-02'),
@@ -90,7 +90,7 @@ INSERT INTO cliente (dni_nit, nombre, apellido, email, telefono, direccion, fech
   ('1234567800128', 'Jorge',     'Arevalo',    'jorge.a@mail.com',          '5555-0128', 'Villa Nueva',          '2026-04-05');
 
 -- EMPLEADO 
-INSERT INTO empleado (dni, nombre, apellido, email, telefono, puesto, salario, fecha_contratacion) VALUES
+INSERT INTO empleado (dpi, nombre, apellido, email, telefono, puesto, salario, fecha_contratacion) VALUES
   ('9999111100101', 'Sofia',     'Alvarez',    'sofia.a@tienda.gt',    '4444-0001', 'Gerente',        8000.00, '2024-05-01'),
   ('9999222200102', 'Pedro',     'Ramirez',    'pedro.r@tienda.gt',    '4444-0002', 'Vendedor',       4500.00, '2025-01-15'),
   ('9999333300103', 'Karla',     'Hernandez',  'karla.h@tienda.gt',    '4444-0003', 'Cajera',         4000.00, '2025-06-10'),
