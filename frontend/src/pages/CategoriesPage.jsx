@@ -1,4 +1,4 @@
-import { Save } from 'lucide-react'
+import { Edit3, Save, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { DataTable } from '../components/DataTable.jsx'
 import { FormField } from '../components/FormField.jsx'
@@ -95,8 +95,14 @@ export function CategoriesPage() {
               label: 'Acciones',
               render: (row) => (
                 <div className="row-actions">
-                  <button className="secondary-button compact-button" type="button" onClick={() => editCategory(row)}>Editar</button>
-                  <button className="danger-button compact-button" type="button" onClick={() => deleteCategory(row.id_categoria)}>Eliminar</button>
+                  <button className="secondary-button compact-button" type="button" onClick={() => editCategory(row)}>
+                    <Edit3 size={15} />
+                    Editar
+                  </button>
+                  <button className="danger-button compact-button" type="button" onClick={() => deleteCategory(row.id_categoria)}>
+                    <Trash2 size={15} />
+                    Eliminar
+                  </button>
                 </div>
               ),
             },
