@@ -141,6 +141,32 @@
   font-weight: 700;
 }
 
+.search-input {
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-strong);
+  color: var(--text-muted);
+}
+
+.search-input input {
+  min-height: 38px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.filter-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
 input,
 select,
 textarea {
@@ -283,7 +309,8 @@ tr:last-child td {
   }
 
   .form-grid,
-  .form-grid.three-cols {
+  .form-grid.three-cols,
+  .filter-grid {
     grid-template-columns: 1fr;
   }
 }
