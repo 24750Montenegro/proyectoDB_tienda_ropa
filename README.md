@@ -42,15 +42,13 @@ Las credenciales de base de datos son fijas para la calificacion:
 
 ```text
 .
-├── backend/                       # API REST Express
-├── frontend/                      # SPA React con Vite
-├── docker-compose.yml
-├── tienda_ropa.sql                # DDL e indices
-├── tienda_ropa_datos.sql          # Datos de prueba
-├── tienda_ropa_vistas.sql         # Vistas para reportes
-├── tienda_ropa_procedimientos.sql # Procedimientos transaccionales
-├── tienda_ropa_usuarios.sql       # Usuarios seed
-└── .env.example
+|-- backend/        # API REST Express
+|-- database/       # Scripts SQL de esquema, datos, vistas y procedimientos
+|-- frontend/       # SPA React con Vite
+|-- docker-compose.yml
+|-- .env.example
+|-- .gitignore
+`-- README.md
 ```
 
 ## Funcionalidades

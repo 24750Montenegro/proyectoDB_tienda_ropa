@@ -11,11 +11,11 @@ services:
       - "${DB_PORT}:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
-      - ./tienda_ropa.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
-      - ./tienda_ropa_datos.sql:/docker-entrypoint-initdb.d/02_datos.sql:ro
-      - ./tienda_ropa_vistas.sql:/docker-entrypoint-initdb.d/03_vistas.sql:ro
-      - ./tienda_ropa_procedimientos.sql:/docker-entrypoint-initdb.d/04_procedimientos.sql:ro
-      - ./tienda_ropa_usuarios.sql:/docker-entrypoint-initdb.d/05_usuarios.sql:ro
+      - ./database/tienda_ropa.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
+      - ./database/tienda_ropa_datos.sql:/docker-entrypoint-initdb.d/02_datos.sql:ro
+      - ./database/tienda_ropa_vistas.sql:/docker-entrypoint-initdb.d/03_vistas.sql:ro
+      - ./database/tienda_ropa_procedimientos.sql:/docker-entrypoint-initdb.d/04_procedimientos.sql:ro
+      - ./database/tienda_ropa_usuarios.sql:/docker-entrypoint-initdb.d/05_usuarios.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 5s
