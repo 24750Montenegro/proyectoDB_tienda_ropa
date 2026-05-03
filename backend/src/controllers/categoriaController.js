@@ -82,6 +82,7 @@ async function eliminar(req, res, next) {
     }
     res.status(204).send();
   } catch (err) {
+    // 23503 = foreign_key_violation
     if (err.code === '23503') {
       return res.status(409).json({
         error: 'No se puede eliminar: hay productos asociados a esta categoria',

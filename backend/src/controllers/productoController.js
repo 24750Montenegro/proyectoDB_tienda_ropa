@@ -65,6 +65,7 @@ async function crear(req, res, next) {
     });
     res.status(201).json(producto);
   } catch (err) {
+    // 23503 = foreign_key_violation (id_categoria invalido)
     if (err.code === '23503') {
       return res.status(409).json({ error: 'La categoria indicada no existe' });
     }

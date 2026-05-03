@@ -1,6 +1,7 @@
 const { Pool } = require('pg');
 
 const pool = new Pool({
+  // 'db' es el nombre del servicio en docker-compose
   host: process.env.DB_HOST || 'db',
   port: process.env.DB_PORT_INTERNAL || 5432,
   user: process.env.DB_USER,

@@ -1,5 +1,6 @@
 const pool = require('../config/db');
 
+// Transaccion explicita: cualquier excepcion del procedimiento dispara ROLLBACK
 async function registrar({ id_cliente, id_empleado, metodo_pago, items }) {
   const client = await pool.connect();
   try {

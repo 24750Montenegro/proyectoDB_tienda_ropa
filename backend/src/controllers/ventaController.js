@@ -37,6 +37,7 @@ async function registrar(req, res, next) {
     const id_venta = await ventaModel.registrar(req.body);
     res.status(201).json({ id_venta });
   } catch (err) {
+    // P0001 = RAISE EXCEPTION lanzada por sp_registrar_venta
     if (err.code === 'P0001') {
       return res.status(409).json({ error: err.message });
     }
