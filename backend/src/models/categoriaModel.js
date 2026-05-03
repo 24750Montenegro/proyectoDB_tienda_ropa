@@ -7,4 +7,12 @@ async function listarTodas() {
   return rows;
 }
 
-module.exports = { listarTodas };
+async function obtenerPorId(id) {
+  const { rows } = await pool.query(
+    'SELECT id_categoria, nombre, descripcion, updated_at FROM categoria WHERE id_categoria = $1',
+    [id]
+  );
+  return rows[0] || null;
+}
+
+module.exports = { listarTodas, obtenerPorId };
