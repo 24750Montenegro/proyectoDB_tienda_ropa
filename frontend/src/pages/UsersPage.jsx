@@ -9,6 +9,7 @@ import { SearchInput } from '../components/SearchInput.jsx'
 import { Section } from '../components/Section.jsx'
 import { useAuth } from '../hooks/useAuth.js'
 import { useApiResource } from '../hooks/useApiResource.js'
+import { useDebounce } from '../hooks/useDebounce.js'
 import { apiRequest } from '../services/api.js'
 
 export function UsersPage() {
@@ -18,14 +19,15 @@ export function UsersPage() {
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
   const [search, setSearch] = useState('')
+  const debouncedSearch = useDebounce(search)
 
   const filteredUsers = useMemo(() => {
-    const term = search.trim().toLowerCase()
+    const term = debouncedSearch.trim().toLowerCase()
     if (!term) return users.data
     return users.data.filter((user) =>
       `${user.nombre_usuario} ${user.rol} ${user.empleado || ''} ${user.puesto || ''}`.toLowerCase().includes(term),
     )
-  }, [search, users.data])
+  }, [debouncedSearch, users.data])
 
   function handleChange(event) {
     setForm((current) => ({ ...current, [event.target.name]: event.target.value }))

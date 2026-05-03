@@ -10,8 +10,10 @@ import { Notice } from '../components/Notice.jsx'
 import { PageHeader } from '../components/PageHeader.jsx'
 import { ProductForm } from '../components/ProductForm.jsx'
 import { SearchInput } from '../components/SearchInput.jsx'
+import { SearchableSelect } from '../components/SearchableSelect.jsx'
 import { Section } from '../components/Section.jsx'
 import { useApiResource } from '../hooks/useApiResource.js'
+import { useDebounce } from '../hooks/useDebounce.js'
 import { apiRequest } from '../services/api.js'
 
 const emptyProduct = {
@@ -49,9 +51,14 @@ export function ProductsPage() {
   const [submitting, setSubmitting] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
   const [filters, setFilters] = useState({ search: '', category: '', minPrice: '', maxPrice: '' })
+  const debouncedSearch = useDebounce(filters.search)
+  const categoryOptions = categories.data.map((category) => ({
+    value: category.id_categoria,
+    label: category.nombre,
+  }))
 
   const filteredProducts = useMemo(() => {
-    const search = filters.search.trim().toLowerCase()
+    const search = debouncedSearch.trim().toLowerCase()
     const minPrice = filters.minPrice === '' ? null : Number(filters.minPrice)
     const maxPrice = filters.maxPrice === '' ? null : Number(filters.maxPrice)
 
@@ -64,7 +71,7 @@ export function ProductsPage() {
       const matchesMax = maxPrice === null || price <= maxPrice
       return matchesSearch && matchesCategory && matchesMin && matchesMax
     })
-  }, [filters, products.data])
+  }, [debouncedSearch, filters, products.data])
 
   function handleChange(event) {
     setForm((current) => ({ ...current, [event.target.name]: event.target.value }))
@@ -141,19 +148,21 @@ export function ProductsPage() {
           </button>
         }
       >
-        <div className="filter-grid">
+        <div className="filter-search-row">
           <SearchInput
             value={filters.search}
             onChange={(value) => setFilters((current) => ({ ...current, search: value }))}
             placeholder="Buscar producto, marca o color"
           />
+        </div>
+        <div className="filter-grid">
           <FormField label="Categoria">
-            <select value={filters.category} onChange={(event) => setFilters((current) => ({ ...current, category: event.target.value }))}>
-              <option value="">Todas</option>
-              {categories.data.map((category) => (
-                <option key={category.id_categoria} value={category.id_categoria}>{category.nombre}</option>
-              ))}
-            </select>
+            <SearchableSelect
+              value={filters.category}
+              options={categoryOptions}
+              onChange={(value) => setFilters((current) => ({ ...current, category: value }))}
+              placeholder="Buscar categoria"
+            />
           </FormField>
           <FormField label="Precio minimo">
             <input type="number" min="0" step="0.01" value={filters.minPrice} onChange={(event) => setFilters((current) => ({ ...current, minPrice: event.target.value }))} />

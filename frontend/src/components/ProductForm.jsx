@@ -1,9 +1,15 @@
 import { Save } from 'lucide-react'
 import { FormField } from './FormField.jsx'
+import { SearchableSelect } from './SearchableSelect.jsx'
 
 const genderOptions = ['M', 'F', 'UNISEX', 'NINO', 'NINA']
 
 export function ProductForm({ form, categories, submitting, onChange, onSubmit, submitLabel }) {
+  const categoryOptions = categories.map((category) => ({
+    value: category.id_categoria,
+    label: category.nombre,
+  }))
+
   return (
     <form className="resource-form" onSubmit={onSubmit}>
       <div className="form-grid">
@@ -11,14 +17,12 @@ export function ProductForm({ form, categories, submitting, onChange, onSubmit, 
           <input name="nombre" value={form.nombre} onChange={onChange} required />
         </FormField>
         <FormField label="Categoria">
-          <select name="id_categoria" value={form.id_categoria} onChange={onChange} required>
-            <option value="">Seleccionar</option>
-            {categories.map((category) => (
-              <option key={category.id_categoria} value={category.id_categoria}>
-                {category.nombre}
-              </option>
-            ))}
-          </select>
+          <SearchableSelect
+            value={form.id_categoria}
+            options={categoryOptions}
+            onChange={(value) => onChange({ target: { name: 'id_categoria', value } })}
+            placeholder="Buscar categoria"
+          />
         </FormField>
         <FormField label="Marca">
           <input name="marca" value={form.marca} onChange={onChange} />

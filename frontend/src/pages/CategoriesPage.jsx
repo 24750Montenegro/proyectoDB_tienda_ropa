@@ -8,6 +8,7 @@ import { PageHeader } from '../components/PageHeader.jsx'
 import { SearchInput } from '../components/SearchInput.jsx'
 import { Section } from '../components/Section.jsx'
 import { useApiResource } from '../hooks/useApiResource.js'
+import { useDebounce } from '../hooks/useDebounce.js'
 import { apiRequest } from '../services/api.js'
 
 const emptyCategory = { nombre: '', descripcion: '' }
@@ -19,14 +20,15 @@ export function CategoriesPage() {
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
   const [search, setSearch] = useState('')
+  const debouncedSearch = useDebounce(search)
 
   const filteredCategories = useMemo(() => {
-    const term = search.trim().toLowerCase()
+    const term = debouncedSearch.trim().toLowerCase()
     if (!term) return categories.data
     return categories.data.filter((category) =>
       `${category.nombre} ${category.descripcion || ''}`.toLowerCase().includes(term),
     )
-  }, [categories.data, search])
+  }, [categories.data, debouncedSearch])
 
   function handleChange(event) {
     setForm((current) => ({ ...current, [event.target.name]: event.target.value }))

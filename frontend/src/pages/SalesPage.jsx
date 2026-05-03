@@ -1,6 +1,6 @@
 import { ChevronDown, ChevronUp, Eye, ReceiptText, Search, UserRound } from 'lucide-react'
 import { Link } from 'react-router-dom'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { DataTable } from '../components/DataTable.jsx'
 import { FormField } from '../components/FormField.jsx'
 import { Notice } from '../components/Notice.jsx'
@@ -8,9 +8,11 @@ import { PageHeader } from '../components/PageHeader.jsx'
 import { ProductSaleCard } from '../components/ProductSaleCard.jsx'
 import { SaleCart } from '../components/SaleCart.jsx'
 import { SearchInput } from '../components/SearchInput.jsx'
+import { SearchableSelect } from '../components/SearchableSelect.jsx'
 import { Section } from '../components/Section.jsx'
 import { useAuth } from '../hooks/useAuth.js'
 import { useApiResource } from '../hooks/useApiResource.js'
+import { useDebounce } from '../hooks/useDebounce.js'
 import { apiRequest } from '../services/api.js'
 
 const paymentMethods = ['EFECTIVO', 'TARJETA', 'TRANSFERENCIA', 'QR']
@@ -29,6 +31,17 @@ export function SalesPage() {
   const [clientResults, setClientResults] = useState([])
   const [selectedClient, setSelectedClient] = useState(null)
   const [saleFilters, setSaleFilters] = useState({ search: '', payment: '', minTotal: '', maxTotal: '' })
+  const debouncedProductSearch = useDebounce(productFilters.search)
+  const debouncedSaleSearch = useDebounce(saleFilters.search)
+  const debouncedClientSearch = useDebounce(clientSearch)
+  const categoryOptions = useMemo(
+    () =>
+      [...new Map(products.data.map((product) => [product.id_categoria, product.categoria])).entries()].map(([id, name]) => ({
+        value: id,
+        label: name,
+      })),
+    [products.data],
+  )
 
   const cartItems = useMemo(
     () =>
@@ -48,7 +61,7 @@ export function SalesPage() {
   const total = cartItems.reduce((sum, item) => sum + item.subtotal, 0)
 
   const filteredProductCards = useMemo(() => {
-    const term = productFilters.search.trim().toLowerCase()
+    const term = debouncedProductSearch.trim().toLowerCase()
     const minPrice = productFilters.minPrice === '' ? null : Number(productFilters.minPrice)
     const maxPrice = productFilters.maxPrice === '' ? null : Number(productFilters.maxPrice)
 
@@ -58,10 +71,10 @@ export function SalesPage() {
       (minPrice === null || Number(product.precio_venta || 0) >= minPrice) &&
       (maxPrice === null || Number(product.precio_venta || 0) <= maxPrice),
     )
-  }, [productFilters, products.data])
+  }, [debouncedProductSearch, productFilters, products.data])
 
   const filteredSales = useMemo(() => {
-    const term = saleFilters.search.trim().toLowerCase()
+    const term = debouncedSaleSearch.trim().toLowerCase()
     const minTotal = saleFilters.minTotal === '' ? null : Number(saleFilters.minTotal)
     const maxTotal = saleFilters.maxTotal === '' ? null : Number(saleFilters.maxTotal)
 
@@ -74,7 +87,30 @@ export function SalesPage() {
       const matchesMax = maxTotal === null || totalSale <= maxTotal
       return matchesText && matchesPayment && matchesMin && matchesMax
     })
-  }, [saleFilters, sales.data])
+  }, [debouncedSaleSearch, saleFilters, sales.data])
+
+  useEffect(() => {
+    const term = debouncedClientSearch.trim()
+    let ignore = false
+
+    async function loadClients() {
+      if (!term) {
+        setClientResults([])
+        return
+      }
+      try {
+        const clients = await apiRequest(`/clientes?q=${encodeURIComponent(term)}&limite=12`)
+        if (!ignore) setClientResults(clients)
+      } catch (err) {
+        if (!ignore) setError(err.message)
+      }
+    }
+
+    loadClients()
+    return () => {
+      ignore = true
+    }
+  }, [debouncedClientSearch])
 
   function handleChange(event) {
     setForm((current) => ({ ...current, [event.target.name]: event.target.value }))
@@ -224,21 +260,21 @@ export function SalesPage() {
 
             <div className="sales-workspace">
               <div>
+                <div className="filter-search-row">
+                  <SearchInput
+                    value={productFilters.search}
+                    onChange={(value) => setProductFilters((current) => ({ ...current, search: value }))}
+                    placeholder="Buscar producto para agregar"
+                  />
+                </div>
                 <div className="filter-grid">
-                  <div className="search-wide">
-                    <SearchInput
-                      value={productFilters.search}
-                      onChange={(value) => setProductFilters((current) => ({ ...current, search: value }))}
-                      placeholder="Buscar producto para agregar"
-                    />
-                  </div>
                   <FormField label="Categoria">
-                    <select value={productFilters.category} onChange={(event) => setProductFilters((current) => ({ ...current, category: event.target.value }))}>
-                      <option value="">Todas</option>
-                      {[...new Map(products.data.map((product) => [product.id_categoria, product.categoria])).entries()].map(([id, name]) => (
-                        <option key={id} value={id}>{name}</option>
-                      ))}
-                    </select>
+                    <SearchableSelect
+                      value={productFilters.category}
+                      options={categoryOptions}
+                      onChange={(value) => setProductFilters((current) => ({ ...current, category: value }))}
+                      placeholder="Buscar categoria"
+                    />
                   </FormField>
                   <FormField label="Precio minimo">
                     <input type="number" min="0" step="0.01" value={productFilters.minPrice} onChange={(event) => setProductFilters((current) => ({ ...current, minPrice: event.target.value }))} />
