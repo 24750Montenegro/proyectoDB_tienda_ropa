@@ -38,4 +38,12 @@ async function actualizar(id, { nombre, descripcion }) {
   return rows[0] || null;
 }
 
-module.exports = { listarTodas, obtenerPorId, crear, actualizar };
+async function eliminar(id) {
+  const { rowCount } = await pool.query(
+    'DELETE FROM categoria WHERE id_categoria = $1',
+    [id]
+  );
+  return rowCount > 0;
+}
+
+module.exports = { listarTodas, obtenerPorId, crear, actualizar, eliminar };

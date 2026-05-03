@@ -70,4 +70,25 @@ async function actualizar(req, res, next) {
   }
 }
 
-module.exports = { listar, obtener, crear, actualizar };
+async function eliminar(req, res, next) {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id <= 0) {
+      return res.status(400).json({ error: 'ID invalido' });
+    }
+    const eliminado = await categoriaModel.eliminar(id);
+    if (!eliminado) {
+      return res.status(404).json({ error: 'Categoria no encontrada' });
+    }
+    res.status(204).send();
+  } catch (err) {
+    if (err.code === '23503') {
+      return res.status(409).json({
+        error: 'No se puede eliminar: hay productos asociados a esta categoria',
+      });
+    }
+    next(err);
+  }
+}
+
+module.exports = { listar, obtener, crear, actualizar, eliminar };
