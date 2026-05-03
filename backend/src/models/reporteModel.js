@@ -31,4 +31,24 @@ async function clientesPorCategoria(nombreCategoria) {
   return rows;
 }
 
-module.exports = { productosBajoStock, topProductosVendidos, clientesPorCategoria };
+async function productosSobrePromedioCategoria() {
+  const { rows } = await pool.query(
+    `SELECT p.id_producto, p.nombre, p.precio_venta, c.nombre AS categoria
+       FROM producto p
+       JOIN categoria c ON c.id_categoria = p.id_categoria
+      WHERE p.precio_venta > (
+        SELECT AVG(p2.precio_venta)
+          FROM producto p2
+         WHERE p2.id_categoria = p.id_categoria
+      )
+      ORDER BY c.nombre, p.precio_venta DESC`
+  );
+  return rows;
+}
+
+module.exports = {
+  productosBajoStock,
+  topProductosVendidos,
+  clientesPorCategoria,
+  productosSobrePromedioCategoria,
+};

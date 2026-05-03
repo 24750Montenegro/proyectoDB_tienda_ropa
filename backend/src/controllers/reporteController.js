@@ -35,4 +35,18 @@ async function clientesPorCategoria(req, res, next) {
   }
 }
 
-module.exports = { productosBajoStock, topProductosVendidos, clientesPorCategoria };
+async function productosSobrePromedioCategoria(req, res, next) {
+  try {
+    const datos = await reporteModel.productosSobrePromedioCategoria();
+    res.json(datos);
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = {
+  productosBajoStock,
+  topProductosVendidos,
+  clientesPorCategoria,
+  productosSobrePromedioCategoria,
+};
