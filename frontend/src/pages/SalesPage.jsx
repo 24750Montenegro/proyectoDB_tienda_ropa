@@ -24,7 +24,7 @@ export function SalesPage() {
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
   const [registerOpen, setRegisterOpen] = useState(true)
-  const [productSearch, setProductSearch] = useState('')
+  const [productFilters, setProductFilters] = useState({ search: '', category: '', minPrice: '', maxPrice: '' })
   const [clientSearch, setClientSearch] = useState('')
   const [clientResults, setClientResults] = useState([])
   const [selectedClient, setSelectedClient] = useState(null)
@@ -48,12 +48,17 @@ export function SalesPage() {
   const total = cartItems.reduce((sum, item) => sum + item.subtotal, 0)
 
   const filteredProductCards = useMemo(() => {
-    const term = productSearch.trim().toLowerCase()
-    if (!term) return products.data
+    const term = productFilters.search.trim().toLowerCase()
+    const minPrice = productFilters.minPrice === '' ? null : Number(productFilters.minPrice)
+    const maxPrice = productFilters.maxPrice === '' ? null : Number(productFilters.maxPrice)
+
     return products.data.filter((product) =>
-      `${product.nombre} ${product.categoria} ${product.marca || ''} ${product.color || ''}`.toLowerCase().includes(term),
+      (!term || `${product.nombre} ${product.categoria} ${product.marca || ''} ${product.color || ''}`.toLowerCase().includes(term)) &&
+      (!productFilters.category || String(product.id_categoria) === productFilters.category) &&
+      (minPrice === null || Number(product.precio_venta || 0) >= minPrice) &&
+      (maxPrice === null || Number(product.precio_venta || 0) <= maxPrice),
     )
-  }, [productSearch, products.data])
+  }, [productFilters, products.data])
 
   const filteredSales = useMemo(() => {
     const term = saleFilters.search.trim().toLowerCase()
@@ -221,8 +226,26 @@ export function SalesPage() {
               <div>
                 <div className="filter-grid">
                   <div className="search-wide">
-                    <SearchInput value={productSearch} onChange={setProductSearch} placeholder="Buscar producto para agregar" />
+                    <SearchInput
+                      value={productFilters.search}
+                      onChange={(value) => setProductFilters((current) => ({ ...current, search: value }))}
+                      placeholder="Buscar producto para agregar"
+                    />
                   </div>
+                  <FormField label="Categoria">
+                    <select value={productFilters.category} onChange={(event) => setProductFilters((current) => ({ ...current, category: event.target.value }))}>
+                      <option value="">Todas</option>
+                      {[...new Map(products.data.map((product) => [product.id_categoria, product.categoria])).entries()].map(([id, name]) => (
+                        <option key={id} value={id}>{name}</option>
+                      ))}
+                    </select>
+                  </FormField>
+                  <FormField label="Precio minimo">
+                    <input type="number" min="0" step="0.01" value={productFilters.minPrice} onChange={(event) => setProductFilters((current) => ({ ...current, minPrice: event.target.value }))} />
+                  </FormField>
+                  <FormField label="Precio maximo">
+                    <input type="number" min="0" step="0.01" value={productFilters.maxPrice} onChange={(event) => setProductFilters((current) => ({ ...current, maxPrice: event.target.value }))} />
+                  </FormField>
                 </div>
                 <div className="product-card-grid">
                   {filteredProductCards.map((product) => (
