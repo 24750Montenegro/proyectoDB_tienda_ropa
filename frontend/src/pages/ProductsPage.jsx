@@ -1,8 +1,9 @@
-import { Plus, RefreshCw } from 'lucide-react'
+import { Edit3, Plus, RefreshCw, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { CsvButton } from '../components/CsvButton.jsx'
 import { DataTable } from '../components/DataTable.jsx'
+import { Modal } from '../components/Modal.jsx'
 import { Notice } from '../components/Notice.jsx'
 import { PageHeader } from '../components/PageHeader.jsx'
 import { ProductForm } from '../components/ProductForm.jsx'
@@ -42,6 +43,7 @@ export function ProductsPage() {
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [modalOpen, setModalOpen] = useState(false)
 
   function handleChange(event) {
     setForm((current) => ({ ...current, [event.target.name]: event.target.value }))
@@ -56,6 +58,7 @@ export function ProductsPage() {
       await apiRequest('/productos', { method: 'POST', body: normalizeProduct(form) })
       setForm(emptyProduct)
       setMessage('Producto creado correctamente')
+      setModalOpen(false)
       products.reload()
     } catch (err) {
       setError(err.message)
@@ -81,11 +84,24 @@ export function ProductsPage() {
       <PageHeader
         title="Productos"
         description="CRUD completo del catalogo de prendas."
-        actions={<CsvButton filename="productos-weargt.csv" rows={products.data} disabled={products.loading} />}
+        actions={
+          <>
+            <button className="primary-button" type="button" onClick={() => setModalOpen(true)}>
+              <Plus size={16} />
+              Nuevo producto
+            </button>
+            <CsvButton filename="productos-weargt.csv" rows={products.data} disabled={products.loading} />
+          </>
+        }
       />
       <Notice type="error">{error || products.error || categories.error}</Notice>
       <Notice type="success">{message}</Notice>
-      <Section title="Nuevo producto" description="Los campos obligatorios validan contra el backend.">
+      <Modal
+        open={modalOpen}
+        title="Nuevo producto"
+        description="Los campos obligatorios validan contra el backend."
+        onClose={() => setModalOpen(false)}
+      >
         <ProductForm
           form={form}
           categories={categories.data}
@@ -94,7 +110,7 @@ export function ProductsPage() {
           onSubmit={handleSubmit}
           submitLabel="Crear producto"
         />
-      </Section>
+      </Modal>
       <Section
         title="Catalogo"
         actions={
@@ -118,9 +134,12 @@ export function ProductsPage() {
               label: 'Acciones',
               render: (row) => (
                 <div className="row-actions">
-                  <Link className="secondary-button compact-button" to={`/productos/${row.id_producto}`}>Editar</Link>
+                  <Link className="secondary-button compact-button" to={`/productos/${row.id_producto}`}>
+                    <Edit3 size={15} />
+                    Editar
+                  </Link>
                   <button className="danger-button compact-button" type="button" onClick={() => handleDelete(row.id_producto)}>
-                    <Plus className="rotate-icon" size={15} />
+                    <Trash2 size={15} />
                     Eliminar
                   </button>
                 </div>
