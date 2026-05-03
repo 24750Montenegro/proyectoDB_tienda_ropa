@@ -169,6 +169,11 @@ textarea {
   border-radius: 8px;
 }
 
+.table-stack {
+  display: grid;
+  gap: 12px;
+}
+
 table {
   width: 100%;
   border-collapse: collapse;
@@ -201,6 +206,22 @@ tr:last-child td {
 .row-actions {
   gap: 8px;
   flex-wrap: wrap;
+}
+
+.pagination-bar,
+.pagination-actions {
+  display: flex;
+  align-items: center;
+}
+
+.pagination-bar {
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--text-muted);
+}
+
+.pagination-actions {
+  gap: 8px;
 }
 
 .loading-state,
