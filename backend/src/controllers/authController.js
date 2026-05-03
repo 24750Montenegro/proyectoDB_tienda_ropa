@@ -8,6 +8,8 @@ function firmarToken(usuario) {
     nombre_usuario: usuario.nombre_usuario,
     rol: usuario.rol,
     id_empleado: usuario.id_empleado,
+    empleado: usuario.empleado,
+    puesto: usuario.puesto,
   };
   return jwt.sign(payload, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRES_IN || '8h',
@@ -37,6 +39,9 @@ async function login(req, res, next) {
         nombre_usuario: usuario.nombre_usuario,
         rol: usuario.rol,
         id_empleado: usuario.id_empleado,
+        empleado: usuario.empleado,
+        puesto: usuario.puesto,
+        empleado_email: usuario.empleado_email,
       },
     });
   } catch (err) {

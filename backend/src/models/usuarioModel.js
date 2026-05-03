@@ -12,8 +12,13 @@ async function crear({ nombre_usuario, password_hash, rol, id_empleado }) {
 
 async function buscarPorNombre(nombre_usuario) {
   const { rows } = await pool.query(
-    `SELECT id_usuario, nombre_usuario, password_hash, rol, id_empleado
-       FROM usuario WHERE nombre_usuario = $1`,
+    `SELECT u.id_usuario, u.nombre_usuario, u.password_hash, u.rol, u.id_empleado,
+            e.nombre || ' ' || e.apellido AS empleado,
+            e.puesto,
+            e.email AS empleado_email
+       FROM usuario u
+       LEFT JOIN empleado e ON e.id_empleado = u.id_empleado
+      WHERE u.nombre_usuario = $1`,
     [nombre_usuario]
   );
   return rows[0] || null;
