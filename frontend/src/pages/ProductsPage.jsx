@@ -1,12 +1,15 @@
 import { Edit3, Plus, RefreshCw, Trash2 } from 'lucide-react'
 import { useState } from 'react'
+import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { CsvButton } from '../components/CsvButton.jsx'
 import { DataTable } from '../components/DataTable.jsx'
+import { FormField } from '../components/FormField.jsx'
 import { Modal } from '../components/Modal.jsx'
 import { Notice } from '../components/Notice.jsx'
 import { PageHeader } from '../components/PageHeader.jsx'
 import { ProductForm } from '../components/ProductForm.jsx'
+import { SearchInput } from '../components/SearchInput.jsx'
 import { Section } from '../components/Section.jsx'
 import { useApiResource } from '../hooks/useApiResource.js'
 import { apiRequest } from '../services/api.js'
@@ -44,6 +47,23 @@ export function ProductsPage() {
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
+  const [filters, setFilters] = useState({ search: '', category: '', minPrice: '', maxPrice: '' })
+
+  const filteredProducts = useMemo(() => {
+    const search = filters.search.trim().toLowerCase()
+    const minPrice = filters.minPrice === '' ? null : Number(filters.minPrice)
+    const maxPrice = filters.maxPrice === '' ? null : Number(filters.maxPrice)
+
+    return products.data.filter((product) => {
+      const text = `${product.nombre} ${product.categoria} ${product.marca || ''} ${product.color || ''}`.toLowerCase()
+      const price = Number(product.precio_venta || 0)
+      const matchesSearch = !search || text.includes(search)
+      const matchesCategory = !filters.category || String(product.id_categoria) === filters.category
+      const matchesMin = minPrice === null || price >= minPrice
+      const matchesMax = maxPrice === null || price <= maxPrice
+      return matchesSearch && matchesCategory && matchesMin && matchesMax
+    })
+  }, [filters, products.data])
 
   function handleChange(event) {
     setForm((current) => ({ ...current, [event.target.name]: event.target.value }))
@@ -90,7 +110,7 @@ export function ProductsPage() {
               <Plus size={16} />
               Nuevo producto
             </button>
-            <CsvButton filename="productos-weargt.csv" rows={products.data} disabled={products.loading} />
+            <CsvButton filename="productos-weargt.csv" rows={filteredProducts} disabled={products.loading} />
           </>
         }
       />
@@ -120,9 +140,30 @@ export function ProductsPage() {
           </button>
         }
       >
+        <div className="filter-grid">
+          <SearchInput
+            value={filters.search}
+            onChange={(value) => setFilters((current) => ({ ...current, search: value }))}
+            placeholder="Buscar producto, marca o color"
+          />
+          <FormField label="Categoria">
+            <select value={filters.category} onChange={(event) => setFilters((current) => ({ ...current, category: event.target.value }))}>
+              <option value="">Todas</option>
+              {categories.data.map((category) => (
+                <option key={category.id_categoria} value={category.id_categoria}>{category.nombre}</option>
+              ))}
+            </select>
+          </FormField>
+          <FormField label="Precio minimo">
+            <input type="number" min="0" step="0.01" value={filters.minPrice} onChange={(event) => setFilters((current) => ({ ...current, minPrice: event.target.value }))} />
+          </FormField>
+          <FormField label="Precio maximo">
+            <input type="number" min="0" step="0.01" value={filters.maxPrice} onChange={(event) => setFilters((current) => ({ ...current, maxPrice: event.target.value }))} />
+          </FormField>
+        </div>
         <DataTable
           loading={products.loading}
-          rows={products.data}
+          rows={filteredProducts}
           columns={[
             { key: 'nombre', label: 'Producto', linkTo: (row) => `/productos/${row.id_producto}` },
             { key: 'categoria', label: 'Categoria' },
