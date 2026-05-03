@@ -15,4 +15,14 @@ async function obtenerPorId(id) {
   return rows[0] || null;
 }
 
-module.exports = { listarTodas, obtenerPorId };
+async function crear({ nombre, descripcion }) {
+  const { rows } = await pool.query(
+    `INSERT INTO categoria (nombre, descripcion)
+     VALUES ($1, $2)
+     RETURNING id_categoria, nombre, descripcion, updated_at`,
+    [nombre, descripcion ?? null]
+  );
+  return rows[0];
+}
+
+module.exports = { listarTodas, obtenerPorId, crear };

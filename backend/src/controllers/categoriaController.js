@@ -25,4 +25,23 @@ async function obtener(req, res, next) {
   }
 }
 
-module.exports = { listar, obtener };
+async function crear(req, res, next) {
+  try {
+    const { nombre, descripcion } = req.body;
+    if (!nombre || typeof nombre !== 'string' || nombre.trim() === '') {
+      return res.status(400).json({ error: 'El nombre es obligatorio' });
+    }
+    const categoria = await categoriaModel.crear({
+      nombre: nombre.trim(),
+      descripcion,
+    });
+    res.status(201).json(categoria);
+  } catch (err) {
+    if (err.code === '23505') {
+      return res.status(409).json({ error: 'Ya existe una categoria con ese nombre' });
+    }
+    next(err);
+  }
+}
+
+module.exports = { listar, obtener, crear };
