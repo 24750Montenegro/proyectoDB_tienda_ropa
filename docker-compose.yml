@@ -42,5 +42,16 @@ services:
     ports:
       - "${BACKEND_PORT}:${BACKEND_PORT}"
 
+  frontend:
+    build: ./frontend
+    container_name: tienda_ropa_frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      VITE_API_URL: "http://localhost:${BACKEND_PORT}/api"
+    ports:
+      - "${FRONTEND_PORT}:5173"
+
 volumes:
   pgdata:
