@@ -35,6 +35,7 @@ services:
       DB_PASSWORD: ${DB_PASSWORD}
       DB_NAME: ${DB_NAME}
       BACKEND_PORT: ${BACKEND_PORT}
+      CORS_ORIGIN: ${CORS_ORIGIN}
     ports:
       - "${BACKEND_PORT}:${BACKEND_PORT}"
 
