@@ -1,4 +1,4 @@
-import { Eye, ReceiptText } from 'lucide-react'
+import { ChevronDown, ChevronUp, Eye, ReceiptText, Search, UserRound } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useMemo, useState } from 'react'
 import { DataTable } from '../components/DataTable.jsx'
@@ -7,6 +7,7 @@ import { Notice } from '../components/Notice.jsx'
 import { PageHeader } from '../components/PageHeader.jsx'
 import { ProductSaleCard } from '../components/ProductSaleCard.jsx'
 import { SaleCart } from '../components/SaleCart.jsx'
+import { SearchInput } from '../components/SearchInput.jsx'
 import { Section } from '../components/Section.jsx'
 import { useAuth } from '../hooks/useAuth.js'
 import { useApiResource } from '../hooks/useApiResource.js'
@@ -18,10 +19,16 @@ export function SalesPage() {
   const { user } = useAuth()
   const sales = useApiResource('/ventas')
   const products = useApiResource('/productos')
-  const [form, setForm] = useState({ id_cliente: 1, metodo_pago: 'EFECTIVO' })
+  const [form, setForm] = useState({ metodo_pago: 'EFECTIVO' })
   const [cart, setCart] = useState({})
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
+  const [registerOpen, setRegisterOpen] = useState(true)
+  const [productSearch, setProductSearch] = useState('')
+  const [clientSearch, setClientSearch] = useState('')
+  const [clientResults, setClientResults] = useState([])
+  const [selectedClient, setSelectedClient] = useState(null)
+  const [saleFilters, setSaleFilters] = useState({ search: '', payment: '', minTotal: '', maxTotal: '' })
 
   const cartItems = useMemo(
     () =>
@@ -40,8 +47,54 @@ export function SalesPage() {
 
   const total = cartItems.reduce((sum, item) => sum + item.subtotal, 0)
 
+  const filteredProductCards = useMemo(() => {
+    const term = productSearch.trim().toLowerCase()
+    if (!term) return products.data
+    return products.data.filter((product) =>
+      `${product.nombre} ${product.categoria} ${product.marca || ''} ${product.color || ''}`.toLowerCase().includes(term),
+    )
+  }, [productSearch, products.data])
+
+  const filteredSales = useMemo(() => {
+    const term = saleFilters.search.trim().toLowerCase()
+    const minTotal = saleFilters.minTotal === '' ? null : Number(saleFilters.minTotal)
+    const maxTotal = saleFilters.maxTotal === '' ? null : Number(saleFilters.maxTotal)
+
+    return sales.data.filter((sale) => {
+      const totalSale = Number(sale.total || 0)
+      const text = `${sale.id_venta} ${sale.cliente} ${sale.empleado} ${sale.metodo_pago} ${sale.estado}`.toLowerCase()
+      const matchesText = !term || text.includes(term)
+      const matchesPayment = !saleFilters.payment || sale.metodo_pago === saleFilters.payment
+      const matchesMin = minTotal === null || totalSale >= minTotal
+      const matchesMax = maxTotal === null || totalSale <= maxTotal
+      return matchesText && matchesPayment && matchesMin && matchesMax
+    })
+  }, [saleFilters, sales.data])
+
   function handleChange(event) {
     setForm((current) => ({ ...current, [event.target.name]: event.target.value }))
+  }
+
+  async function searchClients() {
+    setError('')
+    try {
+      const clients = await apiRequest(`/clientes?q=${encodeURIComponent(clientSearch)}&limite=12`)
+      setClientResults(clients)
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+
+  async function useFinalConsumer() {
+    setError('')
+    try {
+      const client = await apiRequest('/clientes/consumidor-final')
+      setSelectedClient(client)
+      setClientResults([])
+      setClientSearch('CF')
+    } catch (err) {
+      setError(err.message)
+    }
   }
 
   function setProductQuantity(product, value) {
@@ -73,13 +126,17 @@ export function SalesPage() {
       setError('Tu usuario no tiene un empleado asociado')
       return
     }
+    if (!selectedClient?.id_cliente) {
+      setError('Selecciona un cliente o usa CF')
+      return
+    }
     if (!cartItems.length) {
       setError('Selecciona al menos un producto')
       return
     }
     try {
       const payload = {
-        id_cliente: Number(form.id_cliente),
+        id_cliente: Number(selectedClient.id_cliente),
         id_empleado: Number(user.id_empleado),
         metodo_pago: form.metodo_pago,
         items: cartItems.map((item) => ({
@@ -102,47 +159,118 @@ export function SalesPage() {
       <PageHeader title="Ventas" description="Registro transaccional con rollback ante errores de stock." />
       <Notice type="error">{error || sales.error || products.error}</Notice>
       <Notice type="success">{message}</Notice>
-      <Section title="Registrar venta" description="El empleado se toma del usuario autenticado.">
-        <form className="resource-form" onSubmit={handleSubmit}>
-          <div className="form-grid two-cols">
-            <FormField label="ID cliente">
-              <input name="id_cliente" type="number" min="1" value={form.id_cliente} onChange={handleChange} required />
-            </FormField>
-            <FormField label="Metodo de pago">
-              <select name="metodo_pago" value={form.metodo_pago} onChange={handleChange}>
-                {paymentMethods.map((method) => (
-                  <option key={method} value={method}>{method}</option>
-                ))}
-              </select>
-            </FormField>
-          </div>
-          <div className="sales-workspace">
-            <div className="product-card-grid">
-              {products.data.map((product) => (
-                <ProductSaleCard
-                  key={product.id_producto}
-                  product={product}
-                  quantity={Number(cart[product.id_producto] || 0)}
-                  onIncrease={() => increaseProduct(product)}
-                  onDecrease={() => decreaseProduct(product)}
-                  onSetQuantity={(quantity) => setProductQuantity(product, quantity)}
-                />
-              ))}
+      <Section
+        title="Registrar venta"
+        description="Selecciona cliente, productos y metodo de pago."
+        actions={
+          <button className="secondary-button compact-button" type="button" onClick={() => setRegisterOpen((current) => !current)}>
+            {registerOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+            {registerOpen ? 'Colapsar' : 'Mostrar'}
+          </button>
+        }
+      >
+        {registerOpen ? (
+          <form className="resource-form" onSubmit={handleSubmit}>
+            <div className="form-grid two-cols">
+              <div className="info-panel">
+                <span className="muted-label">Empleado</span>
+                <strong>{user?.empleado || user?.nombre_usuario}</strong>
+                <p>ID {user?.id_empleado || 'sin empleado'} · {user?.puesto || user?.rol}</p>
+              </div>
+              <FormField label="Metodo de pago">
+                <select name="metodo_pago" value={form.metodo_pago} onChange={handleChange}>
+                  {paymentMethods.map((method) => (
+                    <option key={method} value={method}>{method}</option>
+                  ))}
+                </select>
+              </FormField>
             </div>
-            <aside className="cart-panel">
-              <SaleCart items={cartItems} total={total} onRemove={removeProduct} />
-              <button className="primary-button full-width-button" type="submit" disabled={!cartItems.length}>
-                <ReceiptText size={16} />
-                Generar venta
-              </button>
-            </aside>
-          </div>
-        </form>
+
+            <div className="client-search-block">
+              <div className="client-search-row">
+                <SearchInput value={clientSearch} onChange={setClientSearch} placeholder="Buscar cliente por NIT, nombre o apellido" />
+                <button className="secondary-button" type="button" onClick={searchClients}>
+                  <Search size={16} />
+                  Buscar
+                </button>
+                <button className="secondary-button" type="button" onClick={useFinalConsumer}>
+                  <UserRound size={16} />
+                  Usar CF
+                </button>
+              </div>
+              {selectedClient ? (
+                <div className="selected-client">
+                  <span className="muted-label">Cliente seleccionado</span>
+                  <strong>{selectedClient.nombre} {selectedClient.apellido}</strong>
+                  <p>ID {selectedClient.id_cliente} · NIT {selectedClient.dpi_nit}</p>
+                </div>
+              ) : null}
+              {clientResults.length ? (
+                <div className="client-result-list">
+                  {clientResults.map((client) => (
+                    <button className="client-result" type="button" key={client.id_cliente} onClick={() => setSelectedClient(client)}>
+                      <strong>{client.nombre} {client.apellido}</strong>
+                      <span>ID {client.id_cliente} · NIT {client.dpi_nit}</span>
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+
+            <div className="sales-workspace">
+              <div>
+                <div className="filter-grid">
+                  <SearchInput value={productSearch} onChange={setProductSearch} placeholder="Buscar producto para agregar" />
+                </div>
+                <div className="product-card-grid">
+                  {filteredProductCards.map((product) => (
+                    <ProductSaleCard
+                      key={product.id_producto}
+                      product={product}
+                      quantity={Number(cart[product.id_producto] || 0)}
+                      onIncrease={() => increaseProduct(product)}
+                      onDecrease={() => decreaseProduct(product)}
+                      onSetQuantity={(quantity) => setProductQuantity(product, quantity)}
+                    />
+                  ))}
+                </div>
+              </div>
+              <aside className="cart-panel">
+                <SaleCart items={cartItems} total={total} onRemove={removeProduct} />
+                <button className="primary-button full-width-button" type="submit" disabled={!cartItems.length || !selectedClient}>
+                  <ReceiptText size={16} />
+                  Generar venta
+                </button>
+              </aside>
+            </div>
+          </form>
+        ) : null}
       </Section>
       <Section title="Historial">
+        <div className="filter-grid">
+          <SearchInput
+            value={saleFilters.search}
+            onChange={(value) => setSaleFilters((current) => ({ ...current, search: value }))}
+            placeholder="Buscar venta, cliente o empleado"
+          />
+          <FormField label="Metodo de pago">
+            <select value={saleFilters.payment} onChange={(event) => setSaleFilters((current) => ({ ...current, payment: event.target.value }))}>
+              <option value="">Todos</option>
+              {paymentMethods.map((method) => (
+                <option key={method} value={method}>{method}</option>
+              ))}
+            </select>
+          </FormField>
+          <FormField label="Total minimo">
+            <input type="number" min="0" step="0.01" value={saleFilters.minTotal} onChange={(event) => setSaleFilters((current) => ({ ...current, minTotal: event.target.value }))} />
+          </FormField>
+          <FormField label="Total maximo">
+            <input type="number" min="0" step="0.01" value={saleFilters.maxTotal} onChange={(event) => setSaleFilters((current) => ({ ...current, maxTotal: event.target.value }))} />
+          </FormField>
+        </div>
         <DataTable
           loading={sales.loading}
-          rows={sales.data}
+          rows={filteredSales}
           columns={[
             { key: 'id_venta', label: 'Venta', linkTo: (row) => `/ventas/${row.id_venta}`, render: (row) => `#${row.id_venta}` },
             { key: 'cliente', label: 'Cliente' },
