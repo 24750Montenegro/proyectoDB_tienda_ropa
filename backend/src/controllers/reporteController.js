@@ -44,9 +44,23 @@ async function productosSobrePromedioCategoria(req, res, next) {
   }
 }
 
+async function ingresosPorCategoria(req, res, next) {
+  try {
+    const umbral = req.query.umbral !== undefined ? Number(req.query.umbral) : 0;
+    if (Number.isNaN(umbral) || umbral < 0) {
+      return res.status(400).json({ error: 'umbral debe ser un numero >= 0' });
+    }
+    const datos = await reporteModel.ingresosPorCategoria(umbral);
+    res.json(datos);
+  } catch (err) {
+    next(err);
+  }
+}
+
 module.exports = {
   productosBajoStock,
   topProductosVendidos,
   clientesPorCategoria,
   productosSobrePromedioCategoria,
+  ingresosPorCategoria,
 };

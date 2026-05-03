@@ -46,9 +46,29 @@ async function productosSobrePromedioCategoria() {
   return rows;
 }
 
+async function ingresosPorCategoria(umbral) {
+  const { rows } = await pool.query(
+    `SELECT c.nombre AS categoria,
+            COUNT(DISTINCT v.id_venta) AS ventas,
+            SUM(dv.cantidad)           AS unidades,
+            SUM(dv.subtotal)           AS ingresos,
+            AVG(dv.precio_unitario)    AS precio_promedio
+       FROM categoria c
+       JOIN producto p       ON p.id_categoria = c.id_categoria
+       JOIN detalle_venta dv ON dv.id_producto = p.id_producto
+       JOIN venta v          ON v.id_venta = dv.id_venta AND v.estado = 'PAGADA'
+      GROUP BY c.nombre
+     HAVING SUM(dv.subtotal) > $1
+      ORDER BY ingresos DESC`,
+    [umbral]
+  );
+  return rows;
+}
+
 module.exports = {
   productosBajoStock,
   topProductosVendidos,
   clientesPorCategoria,
   productosSobrePromedioCategoria,
+  ingresosPorCategoria,
 };
