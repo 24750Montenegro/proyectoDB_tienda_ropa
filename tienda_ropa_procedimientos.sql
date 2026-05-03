@@ -1,13 +1,5 @@
--- Procedimientos almacenados - Tienda de Ropa
--- Contienen la logica transaccional que el backend invoca con CALL.
+-- Procedimientos transaccionales invocados desde el backend.
 
--- Registra una venta de forma atomica:
---   1. Crea cabecera de venta
---   2. Inserta cada detalle, valida stock y descuenta inventario
---   3. Registra el movimiento de inventario por cada producto
---   4. Calcula y actualiza el total
--- Si algun paso falla (stock insuficiente, producto inexistente, etc.)
--- se lanza una excepcion y la transaccion del backend hace ROLLBACK.
 CREATE OR REPLACE PROCEDURE sp_registrar_venta(
   p_id_cliente   INT,
   p_id_empleado  INT,
@@ -42,6 +34,7 @@ BEGIN
       RAISE EXCEPTION 'Cantidad invalida para producto %', v_id_producto;
     END IF;
 
+    -- Bloqueo de fila para evitar carrera de stock
     SELECT precio_venta, stock_actual
       INTO v_precio, v_stock
       FROM producto
@@ -74,10 +67,6 @@ BEGIN
 END;
 $$;
 
--- Registra una recepcion de compra de forma atomica:
---   1. Crea cabecera de compra
---   2. Inserta cada detalle y suma stock al producto
---   3. Registra el movimiento de inventario tipo ENTRADA
 CREATE OR REPLACE PROCEDURE sp_registrar_compra(
   p_id_proveedor   INT,
   p_id_empleado    INT,
