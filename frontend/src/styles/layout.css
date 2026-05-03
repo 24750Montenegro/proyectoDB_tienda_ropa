@@ -90,6 +90,7 @@
 
 .topbar-actions {
   gap: 10px;
+  margin-left: auto;
 }
 
 .content-area {
