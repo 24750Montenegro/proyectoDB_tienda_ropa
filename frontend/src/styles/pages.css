@@ -78,6 +78,13 @@
   align-items: start;
 }
 
+.cart-panel {
+  position: sticky;
+  top: 96px;
+  display: grid;
+  gap: 16px;
+}
+
 .product-card-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
@@ -181,5 +188,9 @@
 
   .sales-workspace {
     grid-template-columns: 1fr;
+  }
+
+  .cart-panel {
+    position: static;
   }
 }

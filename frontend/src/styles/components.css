@@ -49,6 +49,10 @@
   font-size: 0.9rem;
 }
 
+.full-width-button {
+  width: 100%;
+}
+
 .danger-icon {
   color: var(--danger);
 }
