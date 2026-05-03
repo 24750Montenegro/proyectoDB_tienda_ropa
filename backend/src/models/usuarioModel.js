@@ -19,4 +19,16 @@ async function buscarPorNombre(nombre_usuario) {
   return rows[0] || null;
 }
 
-module.exports = { crear, buscarPorNombre };
+async function listarTodos() {
+  const { rows } = await pool.query(
+    `SELECT u.id_usuario, u.nombre_usuario, u.rol, u.id_empleado, u.created_at,
+            e.nombre || ' ' || e.apellido AS empleado,
+            e.puesto
+       FROM usuario u
+       LEFT JOIN empleado e ON e.id_empleado = u.id_empleado
+      ORDER BY u.created_at DESC`
+  );
+  return rows;
+}
+
+module.exports = { crear, buscarPorNombre, listarTodos };
