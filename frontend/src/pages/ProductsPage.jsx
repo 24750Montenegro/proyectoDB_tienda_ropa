@@ -1,4 +1,4 @@
-import { Edit3, Plus, RefreshCw, Trash2 } from 'lucide-react'
+import { Edit3, Eye, Plus, RefreshCw, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
@@ -21,6 +21,7 @@ const emptyProduct = {
   talla: '',
   color: '',
   marca: '',
+  imagen_url: '',
   genero: 'UNISEX',
   precio_venta: '',
   precio_costo: '',
@@ -175,6 +176,10 @@ export function ProductsPage() {
               label: 'Acciones',
               render: (row) => (
                 <div className="row-actions">
+                  <Link className="secondary-button compact-button" to={`/productos/${row.id_producto}`}>
+                    <Eye size={15} />
+                    Ver
+                  </Link>
                   <Link className="secondary-button compact-button" to={`/productos/${row.id_producto}`}>
                     <Edit3 size={15} />
                     Editar

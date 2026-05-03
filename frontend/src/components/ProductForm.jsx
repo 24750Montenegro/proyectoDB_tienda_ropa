@@ -38,6 +38,9 @@ export function ProductForm({ form, categories, submitting, onChange, onSubmit, 
         <FormField label="Color">
           <input name="color" value={form.color} onChange={onChange} />
         </FormField>
+        <FormField label="Imagen URL">
+          <input name="imagen_url" type="url" value={form.imagen_url} onChange={onChange} placeholder="https://..." />
+        </FormField>
         <FormField label="Precio venta">
           <input name="precio_venta" type="number" min="0" step="0.01" value={form.precio_venta} onChange={onChange} required />
         </FormField>

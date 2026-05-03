@@ -64,6 +64,7 @@ CREATE TABLE producto (
   talla VARCHAR(10),
   color VARCHAR(30),
   marca VARCHAR(60),
+  imagen_url VARCHAR(500),
   genero genero_enum NOT NULL DEFAULT 'UNISEX',
   precio_venta DECIMAL(10,2) NOT NULL CHECK (precio_venta >= 0),
   precio_costo DECIMAL(10,2) NOT NULL CHECK (precio_costo >= 0),

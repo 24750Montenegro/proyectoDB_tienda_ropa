@@ -6,6 +6,9 @@ export function ProductSaleCard({ product, quantity, onIncrease, onDecrease, onS
 
   return (
     <article className={`product-sale-card ${quantity > 0 ? 'selected' : ''}`}>
+      {product.imagen_url ? (
+        <img className="product-sale-image" src={product.imagen_url} alt={product.nombre} />
+      ) : null}
       <div>
         <h3>{product.nombre}</h3>
         <p>{product.categoria}</p>

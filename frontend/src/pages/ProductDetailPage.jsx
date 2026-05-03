@@ -32,6 +32,7 @@ export function ProductDetailPage() {
           talla: product.talla ?? '',
           color: product.color ?? '',
           marca: product.marca ?? '',
+          imagen_url: product.imagen_url ?? '',
         })
       } catch (err) {
         setError(err.message)
