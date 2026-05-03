@@ -9,4 +9,20 @@ async function listar(req, res, next) {
   }
 }
 
-module.exports = { listar };
+async function obtener(req, res, next) {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id <= 0) {
+      return res.status(400).json({ error: 'ID invalido' });
+    }
+    const producto = await productoModel.obtenerPorId(id);
+    if (!producto) {
+      return res.status(404).json({ error: 'Producto no encontrado' });
+    }
+    res.json(producto);
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = { listar, obtener };
