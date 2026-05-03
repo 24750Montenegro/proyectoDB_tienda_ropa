@@ -151,6 +151,7 @@
   border-radius: 8px;
   background: var(--surface-strong);
   color: var(--text-muted);
+  align-self: end;
 }
 
 .search-input input {
@@ -165,6 +166,11 @@
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 12px;
   margin-bottom: 16px;
+  align-items: end;
+}
+
+.filter-grid .search-wide {
+  grid-column: span 2;
 }
 
 input,
@@ -312,6 +318,10 @@ tr:last-child td {
   .form-grid.three-cols,
   .filter-grid {
     grid-template-columns: 1fr;
+  }
+
+  .filter-grid .search-wide {
+    grid-column: auto;
   }
 }
 

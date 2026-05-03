@@ -175,7 +175,7 @@ export function SalesPage() {
               <div className="info-panel">
                 <span className="muted-label">Empleado</span>
                 <strong>{user?.empleado || user?.nombre_usuario}</strong>
-                <p>ID {user?.id_empleado || 'sin empleado'} · {user?.puesto || user?.rol}</p>
+                <p>ID {user?.id_empleado || 'sin empleado'} - {user?.puesto || user?.rol}</p>
               </div>
               <FormField label="Metodo de pago">
                 <select name="metodo_pago" value={form.metodo_pago} onChange={handleChange}>
@@ -202,7 +202,7 @@ export function SalesPage() {
                 <div className="selected-client">
                   <span className="muted-label">Cliente seleccionado</span>
                   <strong>{selectedClient.nombre} {selectedClient.apellido}</strong>
-                  <p>ID {selectedClient.id_cliente} · NIT {selectedClient.dpi_nit}</p>
+                  <p>ID {selectedClient.id_cliente} - NIT {selectedClient.dpi_nit}</p>
                 </div>
               ) : null}
               {clientResults.length ? (
@@ -210,7 +210,7 @@ export function SalesPage() {
                   {clientResults.map((client) => (
                     <button className="client-result" type="button" key={client.id_cliente} onClick={() => setSelectedClient(client)}>
                       <strong>{client.nombre} {client.apellido}</strong>
-                      <span>ID {client.id_cliente} · NIT {client.dpi_nit}</span>
+                      <span>ID {client.id_cliente} - NIT {client.dpi_nit}</span>
                     </button>
                   ))}
                 </div>
@@ -220,7 +220,9 @@ export function SalesPage() {
             <div className="sales-workspace">
               <div>
                 <div className="filter-grid">
-                  <SearchInput value={productSearch} onChange={setProductSearch} placeholder="Buscar producto para agregar" />
+                  <div className="search-wide">
+                    <SearchInput value={productSearch} onChange={setProductSearch} placeholder="Buscar producto para agregar" />
+                  </div>
                 </div>
                 <div className="product-card-grid">
                   {filteredProductCards.map((product) => (

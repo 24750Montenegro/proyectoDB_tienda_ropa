@@ -147,7 +147,7 @@
 }
 
 .mobile-only {
-  display: none;
+  display: none !important;
 }
 
 @media (max-width: 860px) {
@@ -169,7 +169,7 @@
   }
 
   .mobile-only {
-    display: inline-flex;
+    display: inline-flex !important;
   }
 
   .topbar,
