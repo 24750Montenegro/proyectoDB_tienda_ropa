@@ -65,10 +65,32 @@ async function ingresosPorCategoria(umbral) {
   return rows;
 }
 
+async function topProductosConParticipacion(limite = 5) {
+  const { rows } = await pool.query(
+    `WITH ingresos_producto AS (
+       SELECT p.id_producto, p.nombre, SUM(dv.subtotal) AS ingresos
+         FROM producto p
+         JOIN detalle_venta dv ON dv.id_producto = p.id_producto
+         JOIN venta v          ON v.id_venta = dv.id_venta AND v.estado = 'PAGADA'
+        GROUP BY p.id_producto, p.nombre
+     ),
+     total_general AS (SELECT SUM(ingresos) AS total FROM ingresos_producto)
+     SELECT ip.id_producto, ip.nombre, ip.ingresos,
+            ROUND((ip.ingresos / tg.total) * 100, 2) AS porcentaje
+       FROM ingresos_producto ip
+       CROSS JOIN total_general tg
+      ORDER BY ip.ingresos DESC
+      LIMIT $1`,
+    [limite]
+  );
+  return rows;
+}
+
 module.exports = {
   productosBajoStock,
   topProductosVendidos,
   clientesPorCategoria,
   productosSobrePromedioCategoria,
   ingresosPorCategoria,
+  topProductosConParticipacion,
 };

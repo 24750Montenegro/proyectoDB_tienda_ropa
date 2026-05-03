@@ -57,10 +57,24 @@ async function ingresosPorCategoria(req, res, next) {
   }
 }
 
+async function topProductosConParticipacion(req, res, next) {
+  try {
+    const limite = req.query.limite ? Number(req.query.limite) : 5;
+    if (!Number.isInteger(limite) || limite <= 0 || limite > 100) {
+      return res.status(400).json({ error: 'limite debe ser entero entre 1 y 100' });
+    }
+    const datos = await reporteModel.topProductosConParticipacion(limite);
+    res.json(datos);
+  } catch (err) {
+    next(err);
+  }
+}
+
 module.exports = {
   productosBajoStock,
   topProductosVendidos,
   clientesPorCategoria,
   productosSobrePromedioCategoria,
   ingresosPorCategoria,
+  topProductosConParticipacion,
 };
