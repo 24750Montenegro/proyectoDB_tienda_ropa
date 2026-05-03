@@ -37,6 +37,7 @@ async function crear(req, res, next) {
     });
     res.status(201).json(categoria);
   } catch (err) {
+    // 23505 = unique_violation
     if (err.code === '23505') {
       return res.status(409).json({ error: 'Ya existe una categoria con ese nombre' });
     }
@@ -63,6 +64,7 @@ async function actualizar(req, res, next) {
     }
     res.json(categoria);
   } catch (err) {
+    // 23505 = unique_violation
     if (err.code === '23505') {
       return res.status(409).json({ error: 'Ya existe una categoria con ese nombre' });
     }
