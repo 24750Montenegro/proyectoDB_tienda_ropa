@@ -48,4 +48,35 @@ async function crear(datos) {
   return rows[0];
 }
 
-module.exports = { listarTodos, obtenerPorId, crear };
+async function actualizar(id, datos) {
+  const {
+    id_categoria, nombre, descripcion, talla, color, marca, genero,
+    precio_venta, precio_costo, stock_actual, stock_minimo,
+  } = datos;
+  const { rows } = await pool.query(
+    `UPDATE producto SET
+       id_categoria = $1,
+       nombre       = $2,
+       descripcion  = $3,
+       talla        = $4,
+       color        = $5,
+       marca        = $6,
+       genero       = $7::genero_enum,
+       precio_venta = $8,
+       precio_costo = $9,
+       stock_actual = $10,
+       stock_minimo = $11,
+       updated_at   = CURRENT_TIMESTAMP
+     WHERE id_producto = $12
+     RETURNING id_producto, id_categoria, nombre, descripcion, talla, color, marca,
+               genero, precio_venta, precio_costo, stock_actual, stock_minimo, updated_at`,
+    [
+      id_categoria, nombre, descripcion ?? null, talla ?? null, color ?? null,
+      marca ?? null, genero ?? 'UNISEX', precio_venta, precio_costo,
+      stock_actual ?? 0, stock_minimo ?? 0, id,
+    ]
+  );
+  return rows[0] || null;
+}
+
+module.exports = { listarTodos, obtenerPorId, crear, actualizar };

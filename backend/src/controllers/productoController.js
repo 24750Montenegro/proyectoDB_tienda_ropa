@@ -72,4 +72,30 @@ async function crear(req, res, next) {
   }
 }
 
-module.exports = { listar, obtener, crear };
+async function actualizar(req, res, next) {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id <= 0) {
+      return res.status(400).json({ error: 'ID invalido' });
+    }
+    const errores = validarPayload(req.body);
+    if (errores.length > 0) {
+      return res.status(400).json({ error: errores.join('; ') });
+    }
+    const producto = await productoModel.actualizar(id, {
+      ...req.body,
+      nombre: req.body.nombre.trim(),
+    });
+    if (!producto) {
+      return res.status(404).json({ error: 'Producto no encontrado' });
+    }
+    res.json(producto);
+  } catch (err) {
+    if (err.code === '23503') {
+      return res.status(409).json({ error: 'La categoria indicada no existe' });
+    }
+    next(err);
+  }
+}
+
+module.exports = { listar, obtener, crear, actualizar };
