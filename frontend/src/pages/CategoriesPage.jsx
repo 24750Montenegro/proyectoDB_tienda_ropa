@@ -1,9 +1,11 @@
 import { Edit3, Save, Trash2 } from 'lucide-react'
+import { useMemo } from 'react'
 import { useState } from 'react'
 import { DataTable } from '../components/DataTable.jsx'
 import { FormField } from '../components/FormField.jsx'
 import { Notice } from '../components/Notice.jsx'
 import { PageHeader } from '../components/PageHeader.jsx'
+import { SearchInput } from '../components/SearchInput.jsx'
 import { Section } from '../components/Section.jsx'
 import { useApiResource } from '../hooks/useApiResource.js'
 import { apiRequest } from '../services/api.js'
@@ -16,6 +18,15 @@ export function CategoriesPage() {
   const [editingId, setEditingId] = useState(null)
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
+  const [search, setSearch] = useState('')
+
+  const filteredCategories = useMemo(() => {
+    const term = search.trim().toLowerCase()
+    if (!term) return categories.data
+    return categories.data.filter((category) =>
+      `${category.nombre} ${category.descripcion || ''}`.toLowerCase().includes(term),
+    )
+  }, [categories.data, search])
 
   function handleChange(event) {
     setForm((current) => ({ ...current, [event.target.name]: event.target.value }))
@@ -84,9 +95,12 @@ export function CategoriesPage() {
         </form>
       </Section>
       <Section title="Listado">
+        <div className="filter-grid">
+          <SearchInput value={search} onChange={setSearch} placeholder="Buscar categoria" />
+        </div>
         <DataTable
           loading={categories.loading}
-          rows={categories.data}
+          rows={filteredCategories}
           columns={[
             { key: 'nombre', label: 'Categoria' },
             { key: 'descripcion', label: 'Descripcion' },
