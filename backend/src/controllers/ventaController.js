@@ -56,4 +56,20 @@ async function listar(req, res, next) {
   }
 }
 
-module.exports = { registrar, listar };
+async function obtener(req, res, next) {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id <= 0) {
+      return res.status(400).json({ error: 'ID invalido' });
+    }
+    const venta = await ventaModel.obtenerPorId(id);
+    if (!venta) {
+      return res.status(404).json({ error: 'Venta no encontrada' });
+    }
+    res.json(venta);
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = { registrar, listar, obtener };
