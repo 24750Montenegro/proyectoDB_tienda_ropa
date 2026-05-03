@@ -2,9 +2,7 @@
   min-height: 100vh;
   display: grid;
   grid-template-columns: 260px minmax(0, 1fr);
-  background:
-    linear-gradient(90deg, rgba(169, 161, 151, 0.14), transparent 34%),
-    var(--bg);
+  background: var(--bg);
 }
 
 .sidebar {
@@ -83,15 +81,11 @@
   backdrop-filter: blur(16px);
 }
 
-.session-summary {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  color: var(--text-muted);
-}
-
-.session-summary strong {
+.topbar-brand {
+  display: none;
   color: var(--text);
+  font-weight: 900;
+  text-decoration: none;
 }
 
 .topbar-actions {
@@ -183,13 +177,13 @@
     padding-inline: 16px;
   }
 
+  .topbar-brand {
+    display: inline-flex;
+  }
+
   .page-header,
   .section-header {
     align-items: flex-start;
     flex-direction: column;
-  }
-
-  .session-summary span:not(.muted-label) {
-    display: none;
   }
 }

@@ -3,10 +3,7 @@
   display: grid;
   place-items: center;
   padding: 24px;
-  background:
-    linear-gradient(135deg, rgba(129, 105, 102, 0.22), transparent 42%),
-    linear-gradient(315deg, rgba(129, 144, 128, 0.24), transparent 38%),
-    var(--bg);
+  background: var(--bg);
 }
 
 .login-panel {

@@ -25,7 +25,7 @@ const links = [
 
 export function AppLayout() {
   const [menuOpen, setMenuOpen] = useState(false)
-  const { user, logout, isAdmin } = useAuth()
+  const { logout, isAdmin } = useAuth()
   const navigate = useNavigate()
 
   function handleLogout() {
@@ -70,11 +70,7 @@ export function AppLayout() {
           <button className="icon-button mobile-only" type="button" onClick={() => setMenuOpen(true)} aria-label="Abrir menu">
             <Menu size={20} />
           </button>
-          <div className="session-summary">
-            <span className="muted-label">Sesion</span>
-            <strong>{user?.nombre_usuario}</strong>
-            <span>{user?.rol}</span>
-          </div>
+          <Link to="/" className="topbar-brand">WearGT</Link>
           <div className="topbar-actions">
             <ThemeToggle />
             <button className="secondary-button compact-button" type="button" onClick={handleLogout}>
