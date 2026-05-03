@@ -1,8 +1,10 @@
 const express = require('express');
 const reporteController = require('../controllers/reporteController');
+const { requireAuth } = require('../middleware/auth');
 
 const router = express.Router();
 
+router.use(requireAuth);
 router.get('/productos-bajo-stock', reporteController.productosBajoStock);
 router.get('/top-productos', reporteController.topProductosVendidos);
 router.get('/clientes-por-categoria', reporteController.clientesPorCategoria);
