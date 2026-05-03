@@ -25,4 +25,51 @@ async function obtener(req, res, next) {
   }
 }
 
-module.exports = { listar, obtener };
+const GENEROS = ['M', 'F', 'UNISEX', 'NINO', 'NINA'];
+
+function validarPayload(body) {
+  const errores = [];
+  if (!Number.isInteger(body.id_categoria) || body.id_categoria <= 0) {
+    errores.push('id_categoria debe ser un entero positivo');
+  }
+  if (!body.nombre || typeof body.nombre !== 'string' || body.nombre.trim() === '') {
+    errores.push('nombre es obligatorio');
+  }
+  if (typeof body.precio_venta !== 'number' || body.precio_venta < 0) {
+    errores.push('precio_venta debe ser un numero >= 0');
+  }
+  if (typeof body.precio_costo !== 'number' || body.precio_costo < 0) {
+    errores.push('precio_costo debe ser un numero >= 0');
+  }
+  if (body.genero !== undefined && !GENEROS.includes(body.genero)) {
+    errores.push(`genero debe ser uno de: ${GENEROS.join(', ')}`);
+  }
+  if (body.stock_actual !== undefined && (!Number.isInteger(body.stock_actual) || body.stock_actual < 0)) {
+    errores.push('stock_actual debe ser un entero >= 0');
+  }
+  if (body.stock_minimo !== undefined && (!Number.isInteger(body.stock_minimo) || body.stock_minimo < 0)) {
+    errores.push('stock_minimo debe ser un entero >= 0');
+  }
+  return errores;
+}
+
+async function crear(req, res, next) {
+  try {
+    const errores = validarPayload(req.body);
+    if (errores.length > 0) {
+      return res.status(400).json({ error: errores.join('; ') });
+    }
+    const producto = await productoModel.crear({
+      ...req.body,
+      nombre: req.body.nombre.trim(),
+    });
+    res.status(201).json(producto);
+  } catch (err) {
+    if (err.code === '23503') {
+      return res.status(409).json({ error: 'La categoria indicada no existe' });
+    }
+    next(err);
+  }
+}
+
+module.exports = { listar, obtener, crear };
