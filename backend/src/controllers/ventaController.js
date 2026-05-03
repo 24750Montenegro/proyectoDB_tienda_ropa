@@ -47,4 +47,13 @@ async function registrar(req, res, next) {
   }
 }
 
-module.exports = { registrar };
+async function listar(req, res, next) {
+  try {
+    const ventas = await ventaModel.listarTodas();
+    res.json(ventas);
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = { registrar, listar };

@@ -3,6 +3,7 @@ const ventaController = require('../controllers/ventaController');
 
 const router = express.Router();
 
+router.get('/', ventaController.listar);
 router.post('/', ventaController.registrar);
 
 module.exports = router;

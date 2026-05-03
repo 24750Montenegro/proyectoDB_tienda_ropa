@@ -18,4 +18,19 @@ async function registrar({ id_cliente, id_empleado, metodo_pago, items }) {
   }
 }
 
-module.exports = { registrar };
+async function listarTodas() {
+  const { rows } = await pool.query(
+    `SELECT v.id_venta, v.fecha_venta, v.total, v.metodo_pago, v.estado,
+            cl.id_cliente,
+            cl.nombre || ' ' || cl.apellido AS cliente,
+            e.id_empleado,
+            e.nombre || ' ' || e.apellido AS empleado
+       FROM venta v
+       JOIN cliente cl  ON cl.id_cliente = v.id_cliente
+       JOIN empleado e  ON e.id_empleado = v.id_empleado
+       ORDER BY v.fecha_venta DESC`
+  );
+  return rows;
+}
+
+module.exports = { registrar, listarTodas };
