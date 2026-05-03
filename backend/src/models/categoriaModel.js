@@ -25,4 +25,17 @@ async function crear({ nombre, descripcion }) {
   return rows[0];
 }
 
-module.exports = { listarTodas, obtenerPorId, crear };
+async function actualizar(id, { nombre, descripcion }) {
+  const { rows } = await pool.query(
+    `UPDATE categoria
+        SET nombre      = $1,
+            descripcion = $2,
+            updated_at  = CURRENT_TIMESTAMP
+      WHERE id_categoria = $3
+      RETURNING id_categoria, nombre, descripcion, updated_at`,
+    [nombre, descripcion ?? null, id]
+  );
+  return rows[0] || null;
+}
+
+module.exports = { listarTodas, obtenerPorId, crear, actualizar };
