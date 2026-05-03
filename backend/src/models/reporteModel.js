@@ -13,4 +13,22 @@ async function topProductosVendidos(limite = 10) {
   return rows;
 }
 
-module.exports = { productosBajoStock, topProductosVendidos };
+async function clientesPorCategoria(nombreCategoria) {
+  const { rows } = await pool.query(
+    `SELECT cl.id_cliente, cl.nombre, cl.apellido, cl.email, cl.telefono
+       FROM cliente cl
+      WHERE cl.id_cliente IN (
+        SELECT v.id_cliente
+          FROM venta v
+          JOIN detalle_venta dv ON dv.id_venta = v.id_venta
+          JOIN producto p       ON p.id_producto = dv.id_producto
+          JOIN categoria c      ON c.id_categoria = p.id_categoria
+         WHERE c.nombre = $1
+      )
+      ORDER BY cl.apellido, cl.nombre`,
+    [nombreCategoria]
+  );
+  return rows;
+}
+
+module.exports = { productosBajoStock, topProductosVendidos, clientesPorCategoria };

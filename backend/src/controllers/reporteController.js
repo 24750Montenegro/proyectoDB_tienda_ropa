@@ -22,4 +22,17 @@ async function topProductosVendidos(req, res, next) {
   }
 }
 
-module.exports = { productosBajoStock, topProductosVendidos };
+async function clientesPorCategoria(req, res, next) {
+  try {
+    const categoria = (req.query.categoria || '').trim();
+    if (!categoria) {
+      return res.status(400).json({ error: 'parametro categoria es obligatorio' });
+    }
+    const datos = await reporteModel.clientesPorCategoria(categoria);
+    res.json(datos);
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = { productosBajoStock, topProductosVendidos, clientesPorCategoria };
