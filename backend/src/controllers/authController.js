@@ -48,4 +48,8 @@ async function logout(req, res) {
   res.json({ ok: true });
 }
 
-module.exports = { login, logout };
+function me(req, res) {
+  res.json(req.usuario);
+}
+
+module.exports = { login, logout, me };
