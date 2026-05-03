@@ -1,17 +1,31 @@
 import { Save } from 'lucide-react'
+import { useMemo } from 'react'
 import { useState } from 'react'
+import { DataTable } from '../components/DataTable.jsx'
 import { FormField } from '../components/FormField.jsx'
 import { Notice } from '../components/Notice.jsx'
 import { PageHeader } from '../components/PageHeader.jsx'
+import { SearchInput } from '../components/SearchInput.jsx'
 import { Section } from '../components/Section.jsx'
 import { useAuth } from '../hooks/useAuth.js'
+import { useApiResource } from '../hooks/useApiResource.js'
 import { apiRequest } from '../services/api.js'
 
 export function UsersPage() {
   const { isAdmin } = useAuth()
+  const users = useApiResource('/usuarios')
   const [form, setForm] = useState({ nombre_usuario: '', password: '', rol: 'VENDEDOR', id_empleado: '' })
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
+  const [search, setSearch] = useState('')
+
+  const filteredUsers = useMemo(() => {
+    const term = search.trim().toLowerCase()
+    if (!term) return users.data
+    return users.data.filter((user) =>
+      `${user.nombre_usuario} ${user.rol} ${user.empleado || ''} ${user.puesto || ''}`.toLowerCase().includes(term),
+    )
+  }, [search, users.data])
 
   function handleChange(event) {
     setForm((current) => ({ ...current, [event.target.name]: event.target.value }))
@@ -31,6 +45,7 @@ export function UsersPage() {
       })
       setForm({ nombre_usuario: '', password: '', rol: 'VENDEDOR', id_empleado: '' })
       setMessage('Usuario creado correctamente')
+      users.reload()
     } catch (err) {
       setError(err.message)
     }
@@ -41,6 +56,7 @@ export function UsersPage() {
       <PageHeader title="Usuarios" description="Alta de usuarios protegida por rol ADMIN." />
       {!isAdmin ? <Notice type="error">Solo un usuario ADMIN puede crear nuevas cuentas.</Notice> : null}
       <Notice type="error">{error}</Notice>
+      <Notice type="error">{users.error}</Notice>
       <Notice type="success">{message}</Notice>
       <Section title="Nuevo usuario">
         <form className="resource-form" onSubmit={handleSubmit}>
@@ -66,6 +82,22 @@ export function UsersPage() {
             Crear usuario
           </button>
         </form>
+      </Section>
+      <Section title="Usuarios registrados">
+        <div className="filter-grid">
+          <SearchInput value={search} onChange={setSearch} placeholder="Buscar usuario, rol o empleado" />
+        </div>
+        <DataTable
+          loading={users.loading}
+          rows={filteredUsers}
+          columns={[
+            { key: 'nombre_usuario', label: 'Usuario' },
+            { key: 'rol', label: 'Rol' },
+            { key: 'empleado', label: 'Empleado' },
+            { key: 'puesto', label: 'Puesto' },
+            { key: 'created_at', label: 'Creado', render: (row) => new Date(row.created_at).toLocaleDateString() },
+          ]}
+        />
       </Section>
     </>
   )
