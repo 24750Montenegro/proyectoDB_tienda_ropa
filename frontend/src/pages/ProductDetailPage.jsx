@@ -17,6 +17,7 @@ export function ProductDetailPage() {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
+  const [imageBroken, setImageBroken] = useState(false)
 
   useEffect(() => {
     async function loadProduct() {
@@ -44,6 +45,9 @@ export function ProductDetailPage() {
   }, [id])
 
   function handleChange(event) {
+    if (event.target.name === 'imagen_url') {
+      setImageBroken(false)
+    }
     setForm((current) => ({ ...current, [event.target.name]: event.target.value }))
   }
 
@@ -82,6 +86,21 @@ export function ProductDetailPage() {
       <Notice type="error">{error || categories.error}</Notice>
       <Notice type="success">{message}</Notice>
       <Section title={loading ? 'Cargando producto' : form?.nombre || 'Producto'} actions={<button className="secondary-button compact-button" type="button" onClick={() => navigate('/productos')}>Cancelar</button>}>
+        {form ? (
+          <div className="product-image-preview">
+            {form.imagen_url && !imageBroken ? (
+              <img
+                src={form.imagen_url}
+                alt={form.nombre || 'Producto'}
+                onError={() => setImageBroken(true)}
+              />
+            ) : (
+              <div className="product-image-placeholder">
+                {form.imagen_url ? 'No se pudo cargar la imagen' : 'Sin imagen'}
+              </div>
+            )}
+          </div>
+        ) : null}
         {form ? (
           <ProductForm
             form={form}

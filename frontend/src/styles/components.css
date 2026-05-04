@@ -123,6 +123,32 @@
   gap: 16px;
 }
 
+.product-image-preview {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.product-image-preview img,
+.product-image-placeholder {
+  max-width: 240px;
+  max-height: 240px;
+  width: 100%;
+  height: 240px;
+  object-fit: contain;
+  border-radius: 8px;
+  border: 1px solid var(--border, rgba(127, 127, 127, 0.2));
+  background: var(--surface, rgba(127, 127, 127, 0.05));
+}
+
+.product-image-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted, rgba(127, 127, 127, 0.8));
+  font-size: 0.9rem;
+}
+
 .form-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
