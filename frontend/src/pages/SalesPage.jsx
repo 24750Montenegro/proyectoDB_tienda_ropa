@@ -1,8 +1,9 @@
-import { ChevronDown, ChevronUp, Eye, ReceiptText, Search, UserRound } from 'lucide-react'
+import { ChevronDown, ChevronUp, Eye, ReceiptText, Save, Search, UserPlus, UserRound } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useEffect, useMemo, useState } from 'react'
 import { DataTable } from '../components/DataTable.jsx'
 import { FormField } from '../components/FormField.jsx'
+import { Modal } from '../components/Modal.jsx'
 import { Notice } from '../components/Notice.jsx'
 import { PageHeader } from '../components/PageHeader.jsx'
 import { ProductSaleCard } from '../components/ProductSaleCard.jsx'
@@ -16,6 +17,7 @@ import { useDebounce } from '../hooks/useDebounce.js'
 import { apiRequest } from '../services/api.js'
 
 const paymentMethods = ['EFECTIVO', 'TARJETA', 'TRANSFERENCIA', 'QR']
+const emptyClient = { dpi_nit: '', nombre: '', apellido: '', email: '', telefono: '', direccion: '' }
 
 export function SalesPage() {
   const { user } = useAuth()
@@ -31,6 +33,9 @@ export function SalesPage() {
   const [clientResults, setClientResults] = useState([])
   const [selectedClient, setSelectedClient] = useState(null)
   const [saleFilters, setSaleFilters] = useState({ search: '', payment: '', minTotal: '', maxTotal: '' })
+  const [newClientOpen, setNewClientOpen] = useState(false)
+  const [newClient, setNewClient] = useState(emptyClient)
+  const [creatingClient, setCreatingClient] = useState(false)
   const debouncedProductSearch = useDebounce(productFilters.search)
   const debouncedSaleSearch = useDebounce(saleFilters.search)
   const debouncedClientSearch = useDebounce(clientSearch)
@@ -123,6 +128,36 @@ export function SalesPage() {
       setClientResults(clients)
     } catch (err) {
       setError(err.message)
+    }
+  }
+
+  function openNewClient() {
+    setError('')
+    setMessage('')
+    setNewClient(emptyClient)
+    setNewClientOpen(true)
+  }
+
+  function handleNewClientChange(event) {
+    setNewClient((current) => ({ ...current, [event.target.name]: event.target.value }))
+  }
+
+  async function submitNewClient(event) {
+    event.preventDefault()
+    setError('')
+    setCreatingClient(true)
+    try {
+      const created = await apiRequest('/clientes', { method: 'POST', body: newClient })
+      setSelectedClient(created)
+      setClientResults([])
+      setClientSearch(created.dpi_nit)
+      setNewClientOpen(false)
+      setNewClient(emptyClient)
+      setMessage(`Cliente ${created.nombre} ${created.apellido} creado correctamente`)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setCreatingClient(false)
     }
   }
 
@@ -238,6 +273,10 @@ export function SalesPage() {
                   <UserRound size={16} />
                   Usar CF
                 </button>
+                <button className="secondary-button" type="button" onClick={openNewClient}>
+                  <UserPlus size={16} />
+                  Nuevo
+                </button>
               </div>
               {selectedClient ? (
                 <div className="selected-client">
@@ -352,6 +391,44 @@ export function SalesPage() {
           ]}
         />
       </Section>
+      <Modal
+        open={newClientOpen}
+        onClose={() => setNewClientOpen(false)}
+        title="Nuevo cliente"
+        description="Registra un cliente y queda seleccionado para esta venta."
+      >
+        <form className="resource-form" onSubmit={submitNewClient}>
+          <div className="form-grid two-cols">
+            <FormField label="DPI / NIT">
+              <input name="dpi_nit" value={newClient.dpi_nit} onChange={handleNewClientChange} required />
+            </FormField>
+            <FormField label="Email">
+              <input name="email" type="email" value={newClient.email} onChange={handleNewClientChange} />
+            </FormField>
+            <FormField label="Nombre">
+              <input name="nombre" value={newClient.nombre} onChange={handleNewClientChange} required />
+            </FormField>
+            <FormField label="Apellido">
+              <input name="apellido" value={newClient.apellido} onChange={handleNewClientChange} required />
+            </FormField>
+            <FormField label="Telefono">
+              <input name="telefono" value={newClient.telefono} onChange={handleNewClientChange} />
+            </FormField>
+            <FormField label="Direccion">
+              <input name="direccion" value={newClient.direccion} onChange={handleNewClientChange} />
+            </FormField>
+          </div>
+          <div className="form-actions">
+            <button className="primary-button" type="submit" disabled={creatingClient}>
+              <Save size={16} />
+              {creatingClient ? 'Guardando...' : 'Crear cliente'}
+            </button>
+            <button className="secondary-button" type="button" onClick={() => setNewClientOpen(false)}>
+              Cancelar
+            </button>
+          </div>
+        </form>
+      </Modal>
     </>
   )
 }

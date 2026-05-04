@@ -30,6 +30,16 @@ async function obtenerPorId(id) {
   return rows[0] || null;
 }
 
+async function crear({ dpi_nit, nombre, apellido, email, telefono, direccion }) {
+  const { rows } = await pool.query(
+    `INSERT INTO cliente (dpi_nit, nombre, apellido, email, telefono, direccion)
+     VALUES ($1, $2, $3, $4, $5, $6)
+     RETURNING id_cliente, dpi_nit, nombre, apellido, email, telefono, direccion`,
+    [dpi_nit, nombre, apellido, email ?? null, telefono ?? null, direccion ?? null]
+  );
+  return rows[0];
+}
+
 async function obtenerConsumidorFinal() {
   const { rows } = await pool.query(
     `INSERT INTO cliente (dpi_nit, nombre, apellido, email, telefono, direccion)
@@ -42,4 +52,4 @@ async function obtenerConsumidorFinal() {
   return rows[0];
 }
 
-module.exports = { buscar, obtenerPorId, obtenerConsumidorFinal };
+module.exports = { buscar, obtenerPorId, crear, obtenerConsumidorFinal };

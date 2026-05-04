@@ -30,6 +30,39 @@ async function obtener(req, res, next) {
   }
 }
 
+async function crear(req, res, next) {
+  try {
+    const { dpi_nit, nombre, apellido, email, telefono, direccion } = req.body || {};
+    const errores = [];
+    if (!dpi_nit || typeof dpi_nit !== 'string' || dpi_nit.trim() === '') {
+      errores.push('dpi_nit es obligatorio');
+    }
+    if (!nombre || typeof nombre !== 'string' || nombre.trim() === '') {
+      errores.push('nombre es obligatorio');
+    }
+    if (!apellido || typeof apellido !== 'string' || apellido.trim() === '') {
+      errores.push('apellido es obligatorio');
+    }
+    if (errores.length > 0) {
+      return res.status(400).json({ error: errores.join('; ') });
+    }
+    const cliente = await clienteModel.crear({
+      dpi_nit: dpi_nit.trim(),
+      nombre: nombre.trim(),
+      apellido: apellido.trim(),
+      email: email?.trim() || null,
+      telefono: telefono?.trim() || null,
+      direccion: direccion?.trim() || null,
+    });
+    res.status(201).json(cliente);
+  } catch (err) {
+    if (err.code === '23505') {
+      return res.status(409).json({ error: 'Ya existe un cliente con ese DPI/NIT o email' });
+    }
+    next(err);
+  }
+}
+
 async function consumidorFinal(req, res, next) {
   try {
     const cliente = await clienteModel.obtenerConsumidorFinal();
@@ -39,4 +72,4 @@ async function consumidorFinal(req, res, next) {
   }
 }
 
-module.exports = { listar, obtener, consumidorFinal };
+module.exports = { listar, obtener, crear, consumidorFinal };
