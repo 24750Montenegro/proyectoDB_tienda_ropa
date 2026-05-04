@@ -152,7 +152,7 @@ INSERT INTO producto (id_categoria, nombre, descripcion, talla, color, marca, ge
   (16, 'Camiseta Estampada',       'Camiseta con estampado grafico',   'L',  'Negro',       'Hanes',     'UNISEX',  85.00,  40.00, 60, 15, 'https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?w=600&auto=format&fit=crop'),
   (17, 'Blusa Manga Larga',        'Blusa formal manga larga',         'M',  'Blanco',      'Zara',      'F',      230.00, 110.00, 22,  6, 'https://images.unsplash.com/photo-1564257631407-4deb1f99d992?w=600&auto=format&fit=crop'),
   (1,  'Camisa Cuadros Azul',      'Camisa casual de cuadros',         'L',  'Azul',        'Tommy',     'M',      210.00, 100.00, 25,  8, 'https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?w=600&auto=format&fit=crop'),
-  (4,  'Botas de Cuero',           'Botas de cuero estilo casual',     '42', 'Cafe',        'Timberland','M',      720.00, 360.00, 14,  4, 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=600&auto=format&fit=crop');
+  (4,  'Botas de Cuero',           'Botas de cuero estilo casual',     '42', 'Cafe',        'Timberland','M',      720.00, 360.00, 14,  4, 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS0jj5e085d8qhLQbZMrFLPZvz2MOtJJQZZ4A&s');
 
 -- COMPRA
 INSERT INTO compra (id_proveedor, id_empleado, fecha_compra, total, numero_factura, estado) VALUES
