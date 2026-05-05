@@ -9,8 +9,24 @@ Aplicacion web para gestionar inventario, ventas y reportes de una tienda de rop
 
 ## Levantar el proyecto
 
+Linux / macOS:
+
 ```bash
 cp .env.example .env
+docker compose up
+```
+
+Windows (PowerShell):
+
+```powershell
+Copy-Item .env.example .env
+docker compose up
+```
+
+Windows (CMD):
+
+```cmd
+copy .env.example .env
 docker compose up
 ```
 
