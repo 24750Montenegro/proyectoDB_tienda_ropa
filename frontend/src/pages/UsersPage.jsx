@@ -66,7 +66,7 @@ export function UsersPage() {
             <FormField label="Usuario">
               <input name="nombre_usuario" value={form.nombre_usuario} onChange={handleChange} required disabled={!isAdmin} />
             </FormField>
-            <FormField label="Contrasena">
+            <FormField label="Contraseña">
               <input name="password" type="password" minLength="6" value={form.password} onChange={handleChange} required disabled={!isAdmin} />
             </FormField>
             <FormField label="Rol">

@@ -37,9 +37,11 @@ Servicios:
 - Backend: `http://localhost:3000/api`
 - PostgreSQL: `localhost:5432`
 
+## Para LOGIN
+
 Usuarios seed creados automaticamente al levantar Docker por primera vez:
 
-| Usuario | Contrasena | Rol |
+| Usuario | Contraseña | Rol |
 |---------|------------|-----|
 | `admin` | `admin123` | `ADMIN` |
 | `vendedor` | `vendedor123` | `VENDEDOR` |

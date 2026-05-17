@@ -30,7 +30,7 @@ export function LoginPage() {
         </div>
         <div className="login-copy">
           <p className="eyebrow">Inventario y ventas</p>
-          <h1>Control operativo para tienda de ropa</h1>
+          <h1>Control para tienda de ropa</h1>
           <p>Gestiona productos, categorias, ventas y reportes SQL desde una interfaz protegida.</p>
         </div>
         <form className="login-form" onSubmit={handleSubmit}>
@@ -40,7 +40,7 @@ export function LoginPage() {
             <input name="nombre_usuario" value={form.nombre_usuario} onChange={handleChange} autoComplete="username" placeholder="admin" required />
           </label>
           <label>
-            <span>Contrasena</span>
+            <span>Contraseña</span>
             <input name="password" type="password" value={form.password} onChange={handleChange} autoComplete="current-password" placeholder="admin123" required />
           </label>
           <button className="primary-button" type="submit" disabled={status === 'loading'}>
