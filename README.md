@@ -62,6 +62,51 @@ La SPA esta dividida en `Productos`, `Categorias`, `Clientes`, `Usuarios`, `Vent
 - **Ventas** abre el formulario de registro y el listado de ventas. Al confirmar una venta el frontend hace `POST /api/ventas`, el backend abre una transaccion (`BEGIN`), invoca el procedimiento `sp_registrar_venta` y, segun el resultado, ejecuta `COMMIT` o `ROLLBACK`. La transaccion vive en `backend/src/models/ventaModel.js`. El procedimiento dispara `RAISE EXCEPTION` cuando el stock es insuficiente o cuando un producto no existe, lo que provoca el rollback y un mensaje de error visible en la UI. El detalle de cada venta (`/ventas/:id`) se arma con un join entre `venta`, `cliente`, `empleado`, `detalle_venta` y `producto`.
 - **Reportes** concentra todas las consultas SQL exigidas. Cada opcion del selector dispara un endpoint y permite descargar el resultado como CSV.
 
+## Documentación de la API REST (CRUD)
+
+Toda la comunicación entre el frontend y el backend se realiza exclusivamente en formato JSON. Se requiere enviar el token JWT en el header `Authorization: Bearer <token>` para los endpoints protegidos.
+
+### Productos (`/api/productos`)
+- `GET /api/productos`: Retorna la lista de todos los productos.
+- `GET /api/productos/:id`: Retorna el detalle de un producto específico.
+- `POST /api/productos`: Crea un nuevo producto.
+  - **Body (JSON)**: `{"nombre": "Camiseta", "descripcion": "Talla M", "precio": 150.00, "stock": 50, "categoria_id": 1}`
+- `PUT /api/productos/:id`: Actualiza un producto existente.
+  - **Body (JSON)**: `{"nombre": "Camiseta", "precio": 160.00, "stock": 45}`
+- `DELETE /api/productos/:id`: Elimina un producto.
+
+### Categorías (`/api/categorias`)
+- `GET /api/categorias`: Retorna todas las categorías activas.
+- `POST /api/categorias`: Crea una nueva categoría.
+  - **Body (JSON)**: `{"nombre": "Deportes", "descripcion": "Ropa deportiva deportiva"}`
+- `PUT /api/categorias/:id`: Actualiza una categoría.
+- `DELETE /api/categorias/:id`: Elimina una categoría de la base de datos.
+
+### Clientes (`/api/clientes`)
+- `GET /api/clientes`: Retorna la lista de todos los clientes.
+- `GET /api/clientes/:id`: Obtiene el detalle de un cliente específico.
+- `POST /api/clientes`: Registra un nuevo cliente en el sistema.
+  - **Body (JSON)**: `{"nombre": "Juan", "apellido": "Pérez", "email": "juan.perez@email.com", "telefono": "12345678"}`
+- `PUT /api/clientes/:id`: Actualiza la información de un cliente.
+- `DELETE /api/clientes/:id`: Elimina un cliente.
+
+### Usuarios (`/api/usuarios`)
+- `GET /api/usuarios`: Retorna todos los usuarios del sistema.
+- `POST /api/usuarios`: Crea un nuevo usuario.
+  - **Body (JSON)**: `{"nombre": "Admin", "username": "admin2", "password": "password123", "rol": "ADMIN"}`
+- `PUT /api/usuarios/:id`: Actualiza datos de un usuario.
+- `DELETE /api/usuarios/:id`: Elimina o inactiva un usuario del sistema.
+
+### Ventas (`/api/ventas`)
+- `GET /api/ventas`: Retorna el listado del historial de ventas.
+- `GET /api/ventas/:id`: Retorna una venta específica junto con el detalle de productos comprados.
+- `POST /api/ventas`: Registra una nueva venta ejecutando la transacción a nivel de base de datos (`sp_registrar_venta`).
+  - **Body (JSON)**: `{"cliente_id": 1, "empleado_id": 2, "detalles": [{"producto_id": 3, "cantidad": 2, "precio_unitario": 150.00}]}`
+
+### Autenticación (`/api/auth`)
+- `POST /api/auth/login`: Autentica a un usuario y devuelve un token JWT.
+  - **Body (JSON)**: `{"username": "admin", "password": "admin123"}`
+
 ## Reportes y consultas SQL
 
 Estos endpoints viven en `backend/src/controllers/reporteController.js` y `backend/src/models/reporteModel.js`. Todos se consumen desde la pagina `Reportes` (`frontend/src/pages/ReportsPage.jsx`).
