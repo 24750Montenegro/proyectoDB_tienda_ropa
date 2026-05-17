@@ -2,10 +2,11 @@
 
 Aplicacion web para gestionar inventario, ventas y reportes de una tienda de ropa. Incluye base de datos PostgreSQL, backend Express y frontend React, todo levantado con Docker Compose.
 
-## Requisitos
+## Enlace a despliegue 
 
-- Docker y Docker Compose
-- Git
+https://ropa-commerce.jfmonte.com/
+
+
 
 ## Levantar el proyecto
 
