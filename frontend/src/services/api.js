@@ -13,8 +13,11 @@ export async function apiRequest(path, options = {}) {
     ...headers,
   }
 
-  if (!skipAuth && authToken) {
-    requestHeaders.Authorization = `Bearer ${authToken}`
+  if (!skipAuth) {
+    if (!authToken) authToken = localStorage.getItem('weargt_token')
+    if (authToken) {
+      requestHeaders.Authorization = `Bearer ${authToken}`
+    }
   }
 
   const response = await fetch(`${API_BASE_URL}${path}`, {

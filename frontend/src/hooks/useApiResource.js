@@ -20,8 +20,12 @@ export function useApiResource(path, options = {}) {
   }, [path])
 
   useEffect(() => {
-    load()
-  }, [load])
+    // Retrasar apenas la carga si no hay token inmediatamente disponible globalmente
+    // Solo relevante para recargas rápidas, porque el estado y el localStorage se re-sincronizan.
+    if (!options.deferLoad) {
+      load()
+    }
+  }, [load, options.deferLoad])
 
   return { data, setData, loading, error, reload: load }
 }
