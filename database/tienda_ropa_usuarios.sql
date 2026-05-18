@@ -24,29 +24,42 @@ INSERT INTO usuario (nombre_usuario, password_hash, rol, id_empleado) VALUES
   ('auditor1', '$2b$10$1zPRGaMfHs4LVjocFMxQMOlqbYUPfkUApZMsDVm47vCkviMEPjXEW', 'AUDITOR', NULL),
   ('cliente1', '$2b$10$8.xYvM0pc4IuEEFIGf2NZe0anwOENQkS9rESkW.bGobcT/qJLZHvK', 'CLIENTE', NULL);
 
+
+
 -- =========================================================================
--- CREACIÓN DE 5 ROLES EN EL DBMS 
+-- CREACION DE ROLES EN EL DBMS
 
 -- 1. Rol ADMIN - Acceso total
 CREATE ROLE db_admin NOLOGIN;
 GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO db_admin;
 GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO db_admin;
+GRANT EXECUTE ON ALL PROCEDURES IN SCHEMA public TO db_admin;
 
--- 2. Rol EMPLEADO - Puede ver y modificar clientes, ventas, productos, pero NO borrar
+-- 2. Rol EMPLEADO - Lectura del catalogo/clientes/ventas; escritura via SPs
 CREATE ROLE db_empleado NOLOGIN;
-GRANT SELECT, INSERT, UPDATE ON cliente, venta, producto, categoria TO db_empleado;
-GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO db_empleado;
+GRANT SELECT ON cliente, venta, detalle_venta, producto, categoria,
+                v_productos_bajo_stock, v_ventas_detalle_completo,
+                v_resumen_ventas_diarias, v_top_productos_vendidos,
+                v_ventas_por_categoria
+  TO db_empleado;
+GRANT EXECUTE ON PROCEDURE
+    sp_registrar_venta(INT, INT, metodo_pago_enum, JSONB, INT),
+    sp_anular_venta(INT),
+    sp_registrar_cliente(VARCHAR, VARCHAR, VARCHAR, VARCHAR, VARCHAR, VARCHAR, INT)
+  TO db_empleado;
 
--- 3. Rol PROVEEDOR - Solo interactúa con productos y compras (lectura y actualización parcial)
+-- 3. Rol PROVEEDOR - Lectura de catalogo/compras; recepcion via SP
 CREATE ROLE db_proveedor NOLOGIN;
-GRANT SELECT ON categoria, producto, compra TO db_proveedor;
-GRANT UPDATE (stock_actual) ON producto TO db_proveedor;
+GRANT SELECT ON categoria, producto, compra, detalle_compra TO db_proveedor;
+GRANT EXECUTE ON PROCEDURE
+    sp_registrar_compra(INT, INT, VARCHAR, JSONB, INT)
+  TO db_proveedor;
 
--- 4. Rol AUDITOR - Acceso de solo lectura global para poder generar reportes
+-- 4. Rol AUDITOR - Solo lectura global (tablas + vistas de reporte)
 CREATE ROLE db_auditor NOLOGIN;
 GRANT SELECT ON ALL TABLES IN SCHEMA public TO db_auditor;
 
--- 5. Rol CLIENTE - Mínimo acceso, solo ve productos
+-- 5. Rol CLIENTE - Minimo acceso, solo ve catalogo
 CREATE ROLE db_cliente NOLOGIN;
 GRANT SELECT ON producto, categoria TO db_cliente;
 

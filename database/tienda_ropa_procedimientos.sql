@@ -9,6 +9,8 @@ CREATE OR REPLACE PROCEDURE sp_registrar_venta(
   INOUT p_id_venta INT DEFAULT NULL
 )
 LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
 AS $$
 DECLARE
   v_item        JSONB;
@@ -85,6 +87,8 @@ CREATE OR REPLACE PROCEDURE sp_registrar_compra(
   INOUT p_id_compra INT DEFAULT NULL
 )
 LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
 AS $$
 DECLARE
   v_item        JSONB;
@@ -147,6 +151,8 @@ CREATE OR REPLACE PROCEDURE sp_anular_venta(
   p_id_venta INT
 )
 LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
 AS $$
 DECLARE
   v_estado VARCHAR;
@@ -187,6 +193,8 @@ CREATE OR REPLACE PROCEDURE sp_actualizar_precios_masivos(
   INOUT p_filas_afectadas INT DEFAULT NULL
 )
 LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
 AS $$
 BEGIN
   IF p_porcentaje < -90 THEN
@@ -218,6 +226,8 @@ CREATE OR REPLACE PROCEDURE sp_registrar_cliente(
   INOUT p_id_cliente INT DEFAULT NULL
 )
 LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
 AS $$
 BEGIN
   IF p_nombre IS NULL OR p_apellido IS NULL THEN
@@ -242,6 +252,8 @@ CREATE OR REPLACE PROCEDURE sp_ajustar_stock(
   p_nuevo_stock INT
 )
 LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
 AS $$
 BEGIN
   IF p_nuevo_stock < 0 THEN
