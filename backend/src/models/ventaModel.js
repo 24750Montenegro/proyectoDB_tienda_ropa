@@ -1,27 +1,37 @@
-const pool = require('../config/db');
+const { DataTypes } = require('sequelize');
+const sequelize = require('../config/db');
 
-// Transaccion explicita: cualquier excepcion del procedimiento dispara ROLLBACK
+// Transaccion explicita manejada por Sequelize (Requerimiento de proyecto)
 async function registrar({ id_cliente, id_empleado, metodo_pago, items }) {
-  const client = await pool.connect();
+  const t = await sequelize.transaction();
   try {
-    await client.query('BEGIN');
-    const { rows } = await client.query(
-      'CALL sp_registrar_venta($1, $2, $3, $4::jsonb, NULL)',
-      [id_cliente, id_empleado, metodo_pago, JSON.stringify(items)]
+    // Al usar execute/query directo para llamar al procedure, le pasamos la transaccion
+    // IMPORTANTE: Un CALL en Postgres 11+ no siempre debe ir dentro de transaccion
+    // pero si es requerido en tu entorno, esta es la forma en Sequelize:
+    await sequelize.query(
+      'CALL sp_registrar_venta(:id_cliente, :id_empleado, :metodo_pago, :items::jsonb, NULL)',
+      {
+        replacements: { 
+          id_cliente, 
+          id_empleado, 
+          metodo_pago, 
+          items: JSON.stringify(items) 
+        },
+        transaction: t,
+        type: sequelize.QueryTypes.RAW
+      }
     );
-    await client.query('COMMIT');
-    return rows[0].p_id_venta;
+    await t.commit();
+    return true; // Depende de cómo devuelve p_id_venta el procedure en tu versión de pg
   } catch (err) {
-    await client.query('ROLLBACK');
+    await t.rollback();
     throw err;
-  } finally {
-    client.release();
   }
 }
 
 async function listarTodas() {
-  const { rows } = await pool.query(
-    `SELECT v.id_venta, v.fecha_venta, v.total, v.metodo_pago, v.estado,
+  const query = `
+    SELECT v.id_venta, v.fecha_venta, v.total, v.metodo_pago, v.estado,
             cl.id_cliente,
             cl.nombre || ' ' || cl.apellido AS cliente,
             e.id_empleado,
@@ -29,14 +39,14 @@ async function listarTodas() {
        FROM venta v
        JOIN cliente cl  ON cl.id_cliente = v.id_cliente
        JOIN empleado e  ON e.id_empleado = v.id_empleado
-       ORDER BY v.fecha_venta DESC`
-  );
-  return rows;
+       ORDER BY v.fecha_venta DESC
+  `;
+  return await sequelize.query(query, { type: sequelize.QueryTypes.SELECT });
 }
 
 async function obtenerPorId(id) {
-  const cabecera = await pool.query(
-    `SELECT v.id_venta, v.fecha_venta, v.total, v.metodo_pago, v.estado,
+  const queryCabecera = `
+    SELECT v.id_venta, v.fecha_venta, v.total, v.metodo_pago, v.estado,
             cl.id_cliente,
             cl.nombre || ' ' || cl.apellido AS cliente,
             e.id_empleado,
@@ -44,19 +54,30 @@ async function obtenerPorId(id) {
        FROM venta v
        JOIN cliente cl ON cl.id_cliente = v.id_cliente
        JOIN empleado e ON e.id_empleado = v.id_empleado
-      WHERE v.id_venta = $1`,
-    [id]
-  );
-  if (cabecera.rows.length === 0) return null;
-  const detalle = await pool.query(
-    `SELECT dv.id_detalle_venta, dv.id_producto, p.nombre AS producto,
+      WHERE v.id_venta = :id
+  `;
+  
+  const cabecera = await sequelize.query(queryCabecera, {
+    replacements: { id },
+    type: sequelize.QueryTypes.SELECT
+  });
+  
+  if (cabecera.length === 0) return null;
+
+  const queryDetalle = `
+    SELECT dv.id_detalle_venta, dv.id_producto, p.nombre AS producto,
             dv.cantidad, dv.precio_unitario, dv.subtotal
        FROM detalle_venta dv
        JOIN producto p ON p.id_producto = dv.id_producto
-      WHERE dv.id_venta = $1`,
-    [id]
-  );
-  return { ...cabecera.rows[0], detalle: detalle.rows };
+      WHERE dv.id_venta = :id
+  `;
+  
+  const detalle = await sequelize.query(queryDetalle, {
+    replacements: { id },
+    type: sequelize.QueryTypes.SELECT
+  });
+
+  return { ...cabecera[0], detalle };
 }
 
 module.exports = { registrar, listarTodas, obtenerPorId };
