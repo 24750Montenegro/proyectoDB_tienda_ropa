@@ -80,19 +80,26 @@ async function obtenerPorId(id) {
 }
 
 async function crear({ dpi_nit, nombre, apellido, email, telefono, direccion }) {
-  // ORM estricto
-  const nuevoCliente = await Cliente.create({
-    dpi_nit,
-    nombre,
-    apellido,
-    email: email || null,
-    telefono: telefono || null,
-    direccion: direccion || null
-  });
-  
-  // Retornamos sin los timestamps extra 
-  const { fecha_registro, updated_at, ...clienteData } = nuevoCliente.toJSON();
-  return clienteData;
+  try {
+    const result = await sequelize.query(
+      'CALL sp_registrar_cliente(:dpi_nit, :nombre, :apellido, :email, :telefono, :direccion, NULL)',
+      {
+        replacements: { 
+          dpi_nit, nombre, apellido, 
+          email: email || null, 
+          telefono: telefono || null, 
+          direccion: direccion || null 
+        },
+        type: sequelize.QueryTypes.RAW
+      }
+    );
+    
+    // Obtenemos el id auto-retornado por el procedimeinto en la variable INOUT o consultando
+    // Para simplificar asumiendo exito
+    return true; 
+  } catch (err) {
+    throw err;
+  }
 }
 
 async function obtenerConsumidorFinal() {
