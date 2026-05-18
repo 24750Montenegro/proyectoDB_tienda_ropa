@@ -1,12 +1,21 @@
-# Proyecto 2 - WearGT
+# Proyecto 3 - WearGT
 
 Aplicacion web para gestionar inventario, ventas y reportes de una tienda de ropa. Incluye base de datos PostgreSQL, backend Express y frontend React, todo levantado con Docker Compose.
+
+> **Rama de entrega:** `proyecto-3`.
 
 ## Enlace a despliegue 
 
 https://ropa-commerce.jfmonte.com/
 
+## Cambios del Proyecto 3
 
+Sobre el Proyecto 2 se incorporo seguridad a nivel de base de datos y se migro el acceso a datos a un ORM:
+
+- **ORM (Sequelize).** El backend usa `sequelize` (ver `backend/src/config/db.js`) para todas las operaciones CRUD: `Categoria.findAll/create/update/destroy`, `Cliente.update`, `Producto.findAll/create/update/destroy`, `Usuario.findOne`, etc.
+- **5 roles en el DBMS** (`db_admin`, `db_empleado`, `db_proveedor`, `db_auditor`, `db_cliente`) definidos con `CREATE ROLE` y permisos granulares por `GRANT`/`REVOKE`. Detalle en la seccion "Esquema de roles en el DBMS".
+- **Stored Procedures `SECURITY DEFINER`** para toda escritura transaccional: `sp_registrar_venta`, `sp_anular_venta`, `sp_registrar_compra`, `sp_actualizar_precios_masivos`, `sp_registrar_cliente`, `sp_ajustar_stock`. Cada uno maneja su propia transaccion con `COMMIT`/`ROLLBACK` y `RAISE EXCEPTION` (ver `database/tienda_ropa_procedimientos.sql`).
+- **Proteccion por rol en backend y UI.** Los routers usan `requireRol(...)` por endpoint y `ProtectedRoute` filtra rutas en el frontend segun `allowedRoles`.
 
 ## Levantar el proyecto
 
@@ -69,7 +78,7 @@ Las credenciales de base de datos son fijas para la calificacion:
 
 | Variable | Valor |
 |----------|-------|
-| `DB_USER` | `proy2` |
+| `DB_USER` | `proy3` |
 | `DB_PASSWORD` | `secret` |
 | `DB_NAME` | `tienda_ropa` |
 | `DB_PORT` | `5432` |
@@ -95,7 +104,7 @@ El documento `docs/proyecto2_avances.pdf` contiene el diagrama entidad-relacion 
 La SPA esta dividida en `Productos`, `Categorias`, `Clientes`, `Usuarios`, `Ventas` y `Reportes` (acceso desde el menu lateral despues del login).
 
 - **Productos** y **Categorias** exponen el CRUD completo (alta, edicion, eliminacion y listado) contra `/api/productos` y `/api/categorias`. Las pantallas viven en `frontend/src/pages/ProductsPage.jsx` y `CategoriesPage.jsx`.
-- **Ventas** abre el formulario de registro y el listado de ventas. Al confirmar una venta el frontend hace `POST /api/ventas`, el backend abre una transaccion (`BEGIN`), invoca el procedimiento `sp_registrar_venta` y, segun el resultado, ejecuta `COMMIT` o `ROLLBACK`. La transaccion vive en `backend/src/models/ventaModel.js`. El procedimiento dispara `RAISE EXCEPTION` cuando el stock es insuficiente o cuando un producto no existe, lo que provoca el rollback y un mensaje de error visible en la UI. El detalle de cada venta (`/ventas/:id`) se arma con un join entre `venta`, `cliente`, `empleado`, `detalle_venta` y `producto`.
+- **Ventas** abre el formulario de registro y el listado de ventas. Al confirmar una venta el frontend hace `POST /api/ventas` y el backend ejecuta `CALL sp_registrar_venta(...)` mediante Sequelize (`backend/src/models/ventaModel.js`). La transaccion vive dentro del procedimiento: el SP confirma con `COMMIT` al terminar o ejecuta `ROLLBACK` en su bloque `EXCEPTION` cuando `RAISE EXCEPTION` se dispara por stock insuficiente o producto inexistente. El detalle de cada venta (`/ventas/:id`) se arma con un join entre `venta`, `cliente`, `empleado`, `detalle_venta` y `producto`.
 - **Reportes** concentra todas las consultas SQL exigidas. Cada opcion del selector dispara un endpoint y permite descargar el resultado como CSV.
 
 ## Documentación de la API REST (CRUD)
@@ -169,7 +178,7 @@ El login se realiza desde `LoginPage.jsx` contra `POST /api/auth/login`. El back
 Conectarse a la base:
 
 ```bash
-docker compose exec db psql -U proy2 -d tienda_ropa
+docker compose exec db psql -U proy3 -d tienda_ropa
 ```
 
 Reiniciar desde cero:
