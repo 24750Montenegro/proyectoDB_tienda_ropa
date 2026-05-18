@@ -85,7 +85,7 @@ async function eliminar(req, res, next) {
     res.status(204).send();
   } catch (err) {
     // 23503 = foreign_key_violation
-    if (err.code === '23503') {
+    if (err.name === 'SequelizeForeignKeyConstraintError' || err.code === '23503') {
       return res.status(409).json({
         error: 'No se puede eliminar: hay productos asociados a esta categoria',
       });
@@ -94,4 +94,24 @@ async function eliminar(req, res, next) {
   }
 }
 
-module.exports = { listar, obtener, crear, actualizar, eliminar };
+async function actualizarPrecios(req, res, next) {
+  try {
+    const id = Number(req.params.id);
+    const { porcentaje } = req.body;
+    if (!Number.isInteger(id) || id <= 0) {
+      return res.status(400).json({ error: 'ID invalido' });
+    }
+    if (typeof porcentaje !== 'number') {
+      return res.status(400).json({ error: 'El porcentaje es obligatorio y debe ser numero' });
+    }
+    await categoriaModel.actualizarPrecios(id, porcentaje);
+    res.json({ mensaje: `Precios actualizados en un ${porcentaje}% para la categoria ${id}` });
+  } catch (err) {
+    if (err.name === 'SequelizeDatabaseError') {
+      return res.status(409).json({ error: err.message });
+    }
+    next(err);
+  }
+}
+
+module.exports = { listar, obtener, crear, actualizar, eliminar, actualizarPrecios };

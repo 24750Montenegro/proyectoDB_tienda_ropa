@@ -55,4 +55,19 @@ async function eliminar(id) {
   return categoriaEliminada > 0; // Devuelve true si se eliminó, false si no se encontró
 }
 
-module.exports = { Categoria, listarTodas, obtenerPorId, crear, actualizar, eliminar };
+async function actualizarPrecios(id_categoria, porcentaje) {
+  try {
+    const result = await sequelize.query(
+      'CALL sp_actualizar_precios_masivos(:id_categoria, :porcentaje, NULL)',
+      {
+        replacements: { id_categoria, porcentaje },
+        type: sequelize.QueryTypes.RAW
+      }
+    );
+    return true;
+  } catch (err) {
+    throw err;
+  }
+}
+
+module.exports = { Categoria, listarTodas, obtenerPorId, crear, actualizar, eliminar, actualizarPrecios };

@@ -9,6 +9,7 @@ router.get('/', categoriaController.listar);
 router.get('/:id', categoriaController.obtener);
 router.post('/', categoriaController.crear);
 router.put('/:id', categoriaController.actualizar);
+router.put('/:id/precios', categoriaController.actualizarPrecios);
 router.delete('/:id', categoriaController.eliminar);
 
 module.exports = router;
