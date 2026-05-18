@@ -167,4 +167,15 @@ async function eliminar(id) {
   return destructedRows > 0;
 }
 
-module.exports = { Producto, listarTodos, obtenerPorId, crear, actualizar, eliminar };
+async function ajustarStock(id_producto, nuevo_stock) {
+  const result = await sequelize.query(
+    'CALL sp_ajustar_stock(:id, :stock)',
+    {
+      replacements: { id: id_producto, stock: nuevo_stock },
+      type: sequelize.QueryTypes.RAW
+    }
+  );
+  return result;
+}
+
+module.exports = { Producto, listarTodos, obtenerPorId, crear, actualizar, eliminar, ajustarStock };

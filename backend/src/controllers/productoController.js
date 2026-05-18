@@ -120,4 +120,24 @@ async function eliminar(req, res, next) {
   }
 }
 
-module.exports = { listar, obtener, crear, actualizar, eliminar };
+async function ajustarStock(req, res, next) {
+  try {
+    const id = Number(req.params.id);
+    const { stock } = req.body;
+    if (!Number.isInteger(id) || id <= 0) {
+      return res.status(400).json({ error: 'ID invalido' });
+    }
+    if (!Number.isInteger(stock) || stock < 0) {
+      return res.status(400).json({ error: 'El stock debe ser un entero positivo o cero' });
+    }
+    await productoModel.ajustarStock(id, stock);
+    res.json({ mensaje: 'Stock ajustado exitosamente' });
+  } catch (err) {
+    if (err.name === 'SequelizeDatabaseError') {
+      return res.status(409).json({ error: err.message });
+    }
+    next(err);
+  }
+}
+
+module.exports = { listar, obtener, crear, actualizar, eliminar, ajustarStock };
