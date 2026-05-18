@@ -1,13 +1,11 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../config/db');
 
-// Transaccion explicita manejada por Sequelize (Requerimiento de proyecto)
+// Transaccion explicita manejada por Sequelize
 async function registrar({ id_cliente, id_empleado, metodo_pago, items }) {
   const t = await sequelize.transaction();
   try {
-    // Al usar execute/query directo para llamar al procedure, le pasamos la transaccion
-    // IMPORTANTE: Un CALL en Postgres 11+ no siempre debe ir dentro de transaccion
-    // pero si es requerido en tu entorno, esta es la forma en Sequelize:
+    // Al usar execute/query directo para llamar al procedure, le pasamos la transaccion esta es la forma en Sequelize:
     await sequelize.query(
       'CALL sp_registrar_venta(:id_cliente, :id_empleado, :metodo_pago, :items::jsonb, NULL)',
       {
@@ -22,7 +20,7 @@ async function registrar({ id_cliente, id_empleado, metodo_pago, items }) {
       }
     );
     await t.commit();
-    return true; // Depende de cómo devuelve p_id_venta el procedure en tu versión de pg
+    return true;
   } catch (err) {
     await t.rollback();
     throw err;

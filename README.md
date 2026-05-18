@@ -39,12 +39,15 @@ Servicios:
 
 ## Para LOGIN
 
-Usuarios seed creados automaticamente al levantar Docker por primera vez:
+Usuarios seed creados automaticamente al levantar Docker por primera vez (cada rol requerido):
 
 | Usuario | Contraseña | Rol |
 |---------|------------|-----|
 | `admin` | `admin123` | `ADMIN` |
-| `vendedor` | `vendedor123` | `VENDEDOR` |
+| `empleado1` | `emp123` | `EMPLEADO` |
+| `proveedor1` | `prov123` | `PROVEEDOR` |
+| `auditor1` | `aud123` | `AUDITOR` |
+| `cliente1` | `cli123` | `CLIENTE` |
 
 ## Variables importantes
 
