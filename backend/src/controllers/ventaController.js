@@ -73,4 +73,20 @@ async function obtener(req, res, next) {
   }
 }
 
-module.exports = { registrar, listar, obtener };
+async function anular(req, res, next) {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id <= 0) {
+      return res.status(400).json({ error: 'ID invalido' });
+    }
+    await ventaModel.anular(id);
+    res.json({ mensaje: 'Venta anulada exitosamente' });
+  } catch (err) {
+    if (err.name === 'SequelizeDatabaseError') {
+      return res.status(409).json({ error: err.message });
+    }
+    next(err);
+  }
+}
+
+module.exports = { registrar, anular, listar, obtener };

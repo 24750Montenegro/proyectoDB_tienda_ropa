@@ -1,11 +1,9 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../config/db');
 
-// Transaccion explicita manejada por Sequelize
+// Transaccion explicita manejada INTERNAMENTE por el Procedimiento Almacenado
 async function registrar({ id_cliente, id_empleado, metodo_pago, items }) {
-  const t = await sequelize.transaction();
   try {
-    // Al usar execute/query directo para llamar al procedure, le pasamos la transaccion esta es la forma en Sequelize:
     await sequelize.query(
       'CALL sp_registrar_venta(:id_cliente, :id_empleado, :metodo_pago, :items::jsonb, NULL)',
       {
@@ -15,14 +13,26 @@ async function registrar({ id_cliente, id_empleado, metodo_pago, items }) {
           metodo_pago, 
           items: JSON.stringify(items) 
         },
-        transaction: t,
         type: sequelize.QueryTypes.RAW
       }
     );
-    await t.commit();
     return true;
   } catch (err) {
-    await t.rollback();
+    throw err;
+  }
+}
+
+async function anular(id_venta) {
+  try {
+    await sequelize.query(
+      'CALL sp_anular_venta(:id_venta)',
+      {
+        replacements: { id_venta },
+        type: sequelize.QueryTypes.RAW
+      }
+    );
+    return true;
+  } catch (err) {
     throw err;
   }
 }
@@ -78,4 +88,4 @@ async function obtenerPorId(id) {
   return { ...cabecera[0], detalle };
 }
 
-module.exports = { registrar, listarTodas, obtenerPorId };
+module.exports = { registrar, anular, listarTodas, obtenerPorId };

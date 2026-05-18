@@ -8,5 +8,6 @@ router.use(requireAuth);
 router.get('/', ventaController.listar);
 router.get('/:id', ventaController.obtener);
 router.post('/', ventaController.registrar);
+router.put('/:id/anular', ventaController.anular);
 
 module.exports = router;
