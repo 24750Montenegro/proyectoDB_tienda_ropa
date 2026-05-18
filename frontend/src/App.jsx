@@ -26,11 +26,46 @@ function App() {
         <Route index element={<DashboardPage />} />
         <Route path="productos" element={<ProductsPage />} />
         <Route path="productos/:id" element={<ProductDetailPage />} />
-        <Route path="categorias" element={<CategoriesPage />} />
-        <Route path="ventas" element={<SalesPage />} />
-        <Route path="ventas/:id" element={<SaleDetailPage />} />
-        <Route path="reportes" element={<ReportsPage />} />
-        <Route path="usuarios" element={<UsersPage />} />
+        <Route
+          path="categorias"
+          element={
+            <ProtectedRoute allowedRoles={['ADMIN', 'EMPLEADO']}>
+              <CategoriesPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="ventas"
+          element={
+            <ProtectedRoute allowedRoles={['ADMIN', 'EMPLEADO', 'AUDITOR']}>
+              <SalesPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="ventas/:id"
+          element={
+            <ProtectedRoute allowedRoles={['ADMIN', 'EMPLEADO', 'AUDITOR']}>
+              <SaleDetailPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="reportes"
+          element={
+            <ProtectedRoute allowedRoles={['ADMIN', 'EMPLEADO', 'AUDITOR']}>
+              <ReportsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="usuarios"
+          element={
+            <ProtectedRoute allowedRoles={['ADMIN']}>
+              <UsersPage />
+            </ProtectedRoute>
+          }
+        />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

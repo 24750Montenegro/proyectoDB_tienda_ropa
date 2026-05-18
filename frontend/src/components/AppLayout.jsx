@@ -17,15 +17,15 @@ import { useAuth } from '../hooks/useAuth.js'
 const links = [
   { to: '/', label: 'Panel', icon: LayoutDashboard },
   { to: '/productos', label: 'Productos', icon: Boxes },
-  { to: '/categorias', label: 'Categorias', icon: FolderTree },
-  { to: '/ventas', label: 'Ventas', icon: ReceiptText },
-  { to: '/reportes', label: 'Reportes', icon: BarChart3 },
-  { to: '/usuarios', label: 'Usuarios', icon: Users, adminOnly: true },
+  { to: '/categorias', label: 'Categorias', icon: FolderTree, roles: ['ADMIN', 'EMPLEADO'] },
+  { to: '/ventas', label: 'Ventas', icon: ReceiptText, roles: ['ADMIN', 'EMPLEADO', 'AUDITOR'] },
+  { to: '/reportes', label: 'Reportes', icon: BarChart3, roles: ['ADMIN', 'EMPLEADO', 'AUDITOR'] },
+  { to: '/usuarios', label: 'Usuarios', icon: Users, roles: ['ADMIN'] },
 ]
 
 export function AppLayout() {
   const [menuOpen, setMenuOpen] = useState(false)
-  const { logout, isAdmin } = useAuth()
+  const { logout, user } = useAuth()
   const navigate = useNavigate()
 
   function handleLogout() {
@@ -46,7 +46,7 @@ export function AppLayout() {
         </div>
         <nav className="nav-list" aria-label="Navegacion principal">
           {links
-            .filter((item) => !item.adminOnly || isAdmin)
+            .filter((item) => !item.roles || item.roles.includes(user?.rol))
             .map((item) => {
               const Icon = item.icon
               return (

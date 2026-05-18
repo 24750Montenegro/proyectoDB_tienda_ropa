@@ -1,15 +1,15 @@
 const express = require('express');
 const categoriaController = require('../controllers/categoriaController');
-const { requireAuth } = require('../middleware/auth');
+const { requireAuth, requireRol } = require('../middleware/auth');
 
 const router = express.Router();
 
 router.use(requireAuth);
 router.get('/', categoriaController.listar);
 router.get('/:id', categoriaController.obtener);
-router.post('/', categoriaController.crear);
-router.put('/:id', categoriaController.actualizar);
-router.put('/:id/precios', categoriaController.actualizarPrecios);
-router.delete('/:id', categoriaController.eliminar);
+router.post('/', requireRol('ADMIN', 'EMPLEADO'), categoriaController.crear);
+router.put('/:id', requireRol('ADMIN', 'EMPLEADO'), categoriaController.actualizar);
+router.put('/:id/precios', requireRol('ADMIN'), categoriaController.actualizarPrecios);
+router.delete('/:id', requireRol('ADMIN', 'EMPLEADO'), categoriaController.eliminar);
 
 module.exports = router;
