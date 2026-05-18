@@ -49,6 +49,20 @@ Usuarios seed creados automaticamente al levantar Docker por primera vez (cada r
 | `auditor1` | `aud123` | `AUDITOR` |
 | `cliente1` | `cli123` | `CLIENTE` |
 
+## Esquema de roles en el DBMS
+
+El script `database/tienda_ropa_usuarios.sql` crea cinco roles en PostgreSQL con `CREATE ROLE` y otorga privilegios granulares con `GRANT` / `REVOKE`. Toda escritura transaccional pasa por procedimientos `SECURITY DEFINER`; los roles solo reciben `EXECUTE` sobre los procedimientos que necesitan y `SELECT` sobre tablas/vistas de consulta.
+
+| Rol DBMS | Lectura (SELECT) | Procedimientos (EXECUTE) | Descripcion |
+|---|---|---|---|
+| `db_admin` | todas las tablas y vistas | todos los procedimientos | Acceso total. Unico autorizado a `sp_ajustar_stock` y `sp_actualizar_precios_masivos`. |
+| `db_empleado` | `cliente`, `venta`, `detalle_venta`, `producto`, `categoria` y vistas de reporte | `sp_registrar_venta`, `sp_anular_venta`, `sp_registrar_cliente` | Operacion de punto de venta. No tiene `INSERT/UPDATE` directo sobre tablas transaccionales; todo pasa por SPs. |
+| `db_proveedor` | `categoria`, `producto`, `compra`, `detalle_compra` | `sp_registrar_compra` | Solo registra recepcion de mercancia. No puede modificar `stock_actual` directamente. |
+| `db_auditor` | todas las tablas excepto `usuario` (revocado), mas vistas | ninguno | Solo lectura para reportes y auditoria. No ve `password_hash`. |
+| `db_cliente` | `producto`, `categoria` | ninguno | Acceso minimo al catalogo publico. |
+
+Antes de los `GRANT` se ejecuta `REVOKE EXECUTE ON ALL PROCEDURES IN SCHEMA public FROM PUBLIC` para anular el privilegio que Postgres otorga por defecto a `PUBLIC` sobre nuevos procedimientos.
+
 ## Variables importantes
 
 Las credenciales de base de datos son fijas para la calificacion:
