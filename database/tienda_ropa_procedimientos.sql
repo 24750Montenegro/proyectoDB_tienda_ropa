@@ -1,5 +1,6 @@
 -- Procedimientos transaccionales invocados desde el backend.
 
+-- 1. Registrar venta con transaccion explicita interna y excepciones
 CREATE OR REPLACE PROCEDURE sp_registrar_venta(
   p_id_cliente   INT,
   p_id_empleado  INT,
@@ -64,9 +65,18 @@ BEGIN
   END LOOP;
 
   UPDATE venta SET total = v_total WHERE id_venta = p_id_venta;
+  
+  -- Confirmar la transacciÃ³n explÃcitamente
+  COMMIT;
+EXCEPTION
+  WHEN OTHERS THEN
+    -- TransacciÃ³n explÃcita con ROLLBACK
+    ROLLBACK;
+    RAISE;
 END;
 $$;
 
+-- 2. Registrar compra de mercancia a proveedor
 CREATE OR REPLACE PROCEDURE sp_registrar_compra(
   p_id_proveedor   INT,
   p_id_empleado    INT,
@@ -124,5 +134,134 @@ BEGIN
   END LOOP;
 
   UPDATE compra SET total = v_total WHERE id_compra = p_id_compra;
+  COMMIT;
+EXCEPTION
+  WHEN OTHERS THEN
+    ROLLBACK;
+    RAISE;
 END;
 $$;
+
+-- 3. Anular una venta y revertir stock
+CREATE OR REPLACE PROCEDURE sp_anular_venta(
+  p_id_venta INT
+)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  v_estado VARCHAR;
+  v_registro RECORD;
+BEGIN
+  SELECT estado INTO v_estado FROM venta WHERE id_venta = p_id_venta;
+  
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'La venta % no existe.', p_id_venta;
+  END IF;
+
+  IF v_estado = 'ANULADA' THEN
+    RAISE EXCEPTION 'La venta ya se encuentra anulada.';
+  END IF;
+
+  UPDATE venta SET estado = 'ANULADA' WHERE id_venta = p_id_venta;
+
+  FOR v_registro IN SELECT id_producto, cantidad FROM detalle_venta WHERE id_venta = p_id_venta
+  LOOP
+    UPDATE producto SET stock_actual = stock_actual + v_registro.cantidad WHERE id_producto = v_registro.id_producto;
+
+    INSERT INTO movimiento_inventario (id_producto, tipo, cantidad, motivo, referencia_doc)
+    VALUES (v_registro.id_producto, 'ENTRADA', v_registro.cantidad, 'Anulacion de venta', 'VENTA-' || p_id_venta);
+  END LOOP;
+  
+  COMMIT;
+EXCEPTION
+  WHEN OTHERS THEN
+    ROLLBACK;
+    RAISE;
+END;
+$$;
+
+-- 4. Actualizar masivamente precios de una categoria (ParÃ¡metros E/S e implementaciÃ³n requerida)
+CREATE OR REPLACE PROCEDURE sp_actualizar_precios_masivos(
+  p_id_categoria INT,
+  p_porcentaje DECIMAL,
+  INOUT p_filas_afectadas INT DEFAULT NULL
+)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  IF p_porcentaje < -90 THEN
+    RAISE EXCEPTION 'No se puede disminuir el precio mas del 90%% de una vez';
+  END IF;
+
+  UPDATE producto 
+  SET precio_venta = precio_venta * (1 + (p_porcentaje / 100))
+  WHERE id_categoria = p_id_categoria;
+
+  GET DIAGNOSTICS p_filas_afectadas = ROW_COUNT;
+  
+  COMMIT;
+EXCEPTION
+  WHEN OTHERS THEN
+    ROLLBACK;
+    RAISE;
+END;
+$$;
+
+-- 5. Registrar nuevo cliente (Sp basico con transaccion)
+CREATE OR REPLACE PROCEDURE sp_registrar_cliente(
+  p_dpi_nit VARCHAR,
+  p_nombre VARCHAR,
+  p_apellido VARCHAR,
+  p_email VARCHAR,
+  p_telefono VARCHAR,
+  p_direccion VARCHAR,
+  INOUT p_id_cliente INT DEFAULT NULL
+)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  IF p_nombre IS NULL OR p_apellido IS NULL THEN
+    RAISE EXCEPTION 'El nombre y apellido son obligatorios';
+  END IF;
+
+  INSERT INTO cliente (dpi_nit, nombre, apellido, email, telefono, direccion)
+  VALUES (p_dpi_nit, p_nombre, p_apellido, p_email, p_telefono, p_direccion)
+  RETURNING id_cliente INTO p_id_cliente;
+
+  COMMIT;
+EXCEPTION
+  WHEN OTHERS THEN
+    ROLLBACK;
+    RAISE;
+END;
+$$;
+
+-- 6. Actualizar stock de manera directa (por auditoria o correccion)
+CREATE OR REPLACE PROCEDURE sp_ajustar_stock(
+  p_id_producto INT,
+  p_nuevo_stock INT
+)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  IF p_nuevo_stock < 0 THEN
+    RAISE EXCEPTION 'El stock no puede ser negativo';
+  END IF;
+
+  UPDATE producto SET stock_actual = p_nuevo_stock WHERE id_producto = p_id_producto;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Producto % no existe', p_id_producto;
+  END IF;
+
+  INSERT INTO movimiento_inventario (id_producto, tipo, cantidad, motivo, referencia_doc)
+  VALUES (p_id_producto, 'ENTRADA', p_nuevo_stock, 'Ajuste de inventario manual', 'AJUSTE');
+
+  COMMIT;
+EXCEPTION
+  WHEN OTHERS THEN
+    ROLLBACK;
+    RAISE;
+END;
+$$;
+
