@@ -29,6 +29,8 @@ INSERT INTO usuario (nombre_usuario, password_hash, rol, id_empleado) VALUES
 -- =========================================================================
 -- CREACION DE ROLES EN EL DBMS
 
+REVOKE EXECUTE ON ALL PROCEDURES IN SCHEMA public FROM PUBLIC;
+
 -- 1. Rol ADMIN - Acceso total
 CREATE ROLE db_admin NOLOGIN;
 GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO db_admin;
@@ -58,6 +60,7 @@ GRANT EXECUTE ON PROCEDURE
 -- 4. Rol AUDITOR - Solo lectura global (tablas + vistas de reporte)
 CREATE ROLE db_auditor NOLOGIN;
 GRANT SELECT ON ALL TABLES IN SCHEMA public TO db_auditor;
+REVOKE SELECT ON usuario FROM db_auditor;
 
 -- 5. Rol CLIENTE - Minimo acceso, solo ve catalogo
 CREATE ROLE db_cliente NOLOGIN;
