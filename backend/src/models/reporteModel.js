@@ -1,20 +1,23 @@
-const pool = require('../config/db');
+const sequelize = require('../config/db');
 
 async function productosBajoStock() {
-  const { rows } = await pool.query('SELECT * FROM v_productos_bajo_stock ORDER BY faltante DESC');
-  return rows;
+  return await sequelize.query('SELECT * FROM v_productos_bajo_stock ORDER BY faltante DESC', {
+    type: sequelize.QueryTypes.SELECT
+  });
 }
 
 async function topProductosVendidos(limite = 10) {
-  const { rows } = await pool.query(
-    'SELECT * FROM v_top_productos_vendidos ORDER BY ingresos_totales DESC LIMIT $1',
-    [limite]
+  return await sequelize.query(
+    'SELECT * FROM v_top_productos_vendidos ORDER BY ingresos_totales DESC LIMIT :limite',
+    {
+      replacements: { limite },
+      type: sequelize.QueryTypes.SELECT
+    }
   );
-  return rows;
 }
 
 async function clientesPorCategoria(nombreCategoria) {
-  const { rows } = await pool.query(
+  return await sequelize.query(
     `SELECT cl.id_cliente, cl.nombre, cl.apellido, cl.email, cl.telefono
        FROM cliente cl
       WHERE cl.id_cliente IN (
@@ -23,16 +26,18 @@ async function clientesPorCategoria(nombreCategoria) {
           JOIN detalle_venta dv ON dv.id_venta = v.id_venta
           JOIN producto p       ON p.id_producto = dv.id_producto
           JOIN categoria c      ON c.id_categoria = p.id_categoria
-         WHERE c.nombre = $1
+         WHERE c.nombre = :nombreCategoria
       )
       ORDER BY cl.apellido, cl.nombre`,
-    [nombreCategoria]
+    {
+      replacements: { nombreCategoria },
+      type: sequelize.QueryTypes.SELECT
+    }
   );
-  return rows;
 }
 
 async function productosSobrePromedioCategoria() {
-  const { rows } = await pool.query(
+  return await sequelize.query(
     `SELECT p.id_producto, p.nombre, p.precio_venta, c.nombre AS categoria
        FROM producto p
        JOIN categoria c ON c.id_categoria = p.id_categoria
@@ -41,13 +46,13 @@ async function productosSobrePromedioCategoria() {
           FROM producto p2
          WHERE p2.id_categoria = p.id_categoria
       )
-      ORDER BY c.nombre, p.precio_venta DESC`
+      ORDER BY c.nombre, p.precio_venta DESC`,
+    { type: sequelize.QueryTypes.SELECT }
   );
-  return rows;
 }
 
 async function ingresosPorCategoria(umbral) {
-  const { rows } = await pool.query(
+  return await sequelize.query(
     `SELECT c.nombre AS categoria,
             COUNT(DISTINCT v.id_venta) AS ventas,
             SUM(dv.cantidad)           AS unidades,
@@ -58,15 +63,17 @@ async function ingresosPorCategoria(umbral) {
        JOIN detalle_venta dv ON dv.id_producto = p.id_producto
        JOIN venta v          ON v.id_venta = dv.id_venta AND v.estado = 'PAGADA'
       GROUP BY c.nombre
-     HAVING SUM(dv.subtotal) > $1
+     HAVING SUM(dv.subtotal) > :umbral
       ORDER BY ingresos DESC`,
-    [umbral]
+    {
+      replacements: { umbral },
+      type: sequelize.QueryTypes.SELECT
+    }
   );
-  return rows;
 }
 
 async function topProductosConParticipacion(limite = 5) {
-  const { rows } = await pool.query(
+  return await sequelize.query(
     `WITH ingresos_producto AS (
        SELECT p.id_producto, p.nombre, SUM(dv.subtotal) AS ingresos
          FROM producto p
@@ -80,10 +87,12 @@ async function topProductosConParticipacion(limite = 5) {
        FROM ingresos_producto ip
        CROSS JOIN total_general tg
       ORDER BY ip.ingresos DESC
-      LIMIT $1`,
-    [limite]
+      LIMIT :limite`,
+    {
+      replacements: { limite },
+      type: sequelize.QueryTypes.SELECT
+    }
   );
-  return rows;
 }
 
 module.exports = {
