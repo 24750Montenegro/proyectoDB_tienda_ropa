@@ -1,7 +1,8 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../config/db');
+const { ejecutarProcedimiento } = require('../config/storedProcedure');
 
-const { Categoria } = require('./categoriaModel'); 
+const { Categoria } = require('./categoriaModel');
 
 // Definición del modelo Sequelize
 const Producto = sequelize.define('Producto', {
@@ -168,14 +169,10 @@ async function eliminar(id) {
 }
 
 async function ajustarStock(id_producto, nuevo_stock) {
-  const result = await sequelize.query(
+  return await ejecutarProcedimiento(
     'CALL sp_ajustar_stock(:id, :stock)',
-    {
-      replacements: { id: id_producto, stock: nuevo_stock },
-      type: sequelize.QueryTypes.RAW
-    }
+    { id: id_producto, stock: nuevo_stock }
   );
-  return result;
 }
 
 module.exports = { Producto, listarTodos, obtenerPorId, crear, actualizar, eliminar, ajustarStock };

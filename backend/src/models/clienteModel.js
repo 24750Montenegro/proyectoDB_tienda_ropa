@@ -1,5 +1,6 @@
 const { DataTypes, Op } = require('sequelize');
 const sequelize = require('../config/db');
+const { ejecutarProcedimiento } = require('../config/storedProcedure');
 
 // Definición del modelo de cliente
 const Cliente = sequelize.define('Cliente', {
@@ -80,26 +81,19 @@ async function obtenerPorId(id) {
 }
 
 async function crear({ dpi_nit, nombre, apellido, email, telefono, direccion }) {
-  try {
-    const result = await sequelize.query(
-      'CALL sp_registrar_cliente(:dpi_nit, :nombre, :apellido, :email, :telefono, :direccion, NULL)',
-      {
-        replacements: { 
-          dpi_nit, nombre, apellido, 
-          email: email || null, 
-          telefono: telefono || null, 
-          direccion: direccion || null 
-        },
-        type: sequelize.QueryTypes.RAW
-      }
-    );
-    
-    // Obtenemos el id auto-retornado por el procedimeinto en la variable INOUT o consultando
-    // Para simplificar asumiendo exito
-    return true; 
-  } catch (err) {
-    throw err;
-  }
+  const result = await ejecutarProcedimiento(
+    'CALL sp_registrar_cliente(:dpi_nit, :nombre, :apellido, :email, :telefono, :direccion, NULL)',
+    {
+      dpi_nit, nombre, apellido,
+      email: email || null,
+      telefono: telefono || null,
+      direccion: direccion || null
+    }
+  );
+  // El SP devuelve el id generado en su parametro INOUT (columna p_id_cliente).
+  const id = result.rows?.[0]?.p_id_cliente ?? null;
+  if (id == null) return null;
+  return await obtenerPorId(id);
 }
 
 async function obtenerConsumidorFinal() {

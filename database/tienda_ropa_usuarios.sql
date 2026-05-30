@@ -37,22 +37,34 @@ GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO db_admin;
 GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO db_admin;
 GRANT EXECUTE ON ALL PROCEDURES IN SCHEMA public TO db_admin;
 
--- 2. Rol EMPLEADO - Lectura del catalogo/clientes/ventas; escritura via SPs
+-- 2. Rol EMPLEADO - Operacion de punto de venta.
+-- Los procedimientos son SECURITY INVOKER, por lo que el rol necesita los
+-- privilegios de las tablas que tocan sus SPs (no solo EXECUTE).
 CREATE ROLE db_empleado NOLOGIN;
-GRANT SELECT ON cliente, venta, detalle_venta, producto, categoria,
+GRANT SELECT ON categoria,
                 v_productos_bajo_stock, v_ventas_detalle_completo,
                 v_resumen_ventas_diarias, v_top_productos_vendidos,
                 v_ventas_por_categoria
   TO db_empleado;
+-- Privilegios de escritura acotados a lo que ejecutan sus SPs:
+GRANT SELECT, INSERT, UPDATE ON venta         TO db_empleado;  -- registrar / anular
+GRANT SELECT, INSERT          ON detalle_venta TO db_empleado;  -- registrar / leer al anular
+GRANT INSERT                  ON movimiento_inventario TO db_empleado;
+GRANT SELECT, UPDATE          ON producto      TO db_empleado;  -- bloqueo FOR UPDATE + stock
+GRANT SELECT, INSERT          ON cliente       TO db_empleado;  -- registrar cliente
 GRANT EXECUTE ON PROCEDURE
     sp_registrar_venta(INT, INT, metodo_pago_enum, JSONB, INT),
     sp_anular_venta(INT),
     sp_registrar_cliente(VARCHAR, VARCHAR, VARCHAR, VARCHAR, VARCHAR, VARCHAR, INT)
   TO db_empleado;
 
--- 3. Rol PROVEEDOR - Lectura de catalogo/compras; recepcion via SP
+-- 3. Rol PROVEEDOR - Lectura de catalogo/compras; recepcion via SP (SECURITY INVOKER)
 CREATE ROLE db_proveedor NOLOGIN;
-GRANT SELECT ON categoria, producto, compra, detalle_compra TO db_proveedor;
+GRANT SELECT                  ON categoria     TO db_proveedor;
+GRANT SELECT, INSERT, UPDATE  ON compra        TO db_proveedor;
+GRANT SELECT, INSERT          ON detalle_compra TO db_proveedor;
+GRANT SELECT, UPDATE          ON producto      TO db_proveedor;  -- ingreso de stock
+GRANT INSERT                  ON movimiento_inventario TO db_proveedor;
 GRANT EXECUTE ON PROCEDURE
     sp_registrar_compra(INT, INT, VARCHAR, JSONB, INT)
   TO db_proveedor;

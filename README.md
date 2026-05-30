@@ -14,7 +14,8 @@ Sobre el Proyecto 2 se incorporo seguridad a nivel de base de datos y se migro e
 
 - **ORM (Sequelize).** El backend usa `sequelize` (ver `backend/src/config/db.js`) para todas las operaciones CRUD: `Categoria.findAll/create/update/destroy`, `Cliente.update`, `Producto.findAll/create/update/destroy`, `Usuario.findOne`, etc.
 - **5 roles en el DBMS** (`db_admin`, `db_empleado`, `db_proveedor`, `db_auditor`, `db_cliente`) definidos con `CREATE ROLE` y permisos granulares por `GRANT`/`REVOKE`. Detalle en la seccion "Esquema de roles en el DBMS".
-- **Stored Procedures `SECURITY DEFINER`** para toda escritura transaccional: `sp_registrar_venta`, `sp_anular_venta`, `sp_registrar_compra`, `sp_actualizar_precios_masivos`, `sp_registrar_cliente`, `sp_ajustar_stock`. Cada uno maneja su propia transaccion con `COMMIT`/`ROLLBACK` y `RAISE EXCEPTION` (ver `database/tienda_ropa_procedimientos.sql`).
+- **Los roles del DBMS se usan en tiempo de ejecucion.** Antes de invocar un stored procedure, el backend hace `SET ROLE` al rol nativo del usuario autenticado (ver `backend/src/config/storedProcedure.js` y `dbRoleContext.js`). Asi PostgreSQL evalua de verdad los `GRANT`/`REVOKE`: un rol sin `EXECUTE` o sin privilegio de tabla recibe `permission denied`.
+- **Stored Procedures `SECURITY INVOKER`** para toda escritura transaccional: `sp_registrar_venta`, `sp_anular_venta`, `sp_registrar_compra`, `sp_actualizar_precios_masivos`, `sp_registrar_cliente`, `sp_ajustar_stock`. Cada uno maneja su propia transaccion con `COMMIT`/`ROLLBACK` explicitos y `RAISE EXCEPTION` (ver `database/tienda_ropa_procedimientos.sql`). Son `SECURITY INVOKER` (corren con los privilegios del rol que hace `CALL`) porque PostgreSQL prohibe el control de transacciones en procedimientos `SECURITY DEFINER` o con clausula `SET`.
 - **Proteccion por rol en backend y UI.** Los routers usan `requireRol(...)` por endpoint y `ProtectedRoute` filtra rutas en el frontend segun `allowedRoles`.
 
 ## Levantar el proyecto
@@ -60,17 +61,26 @@ Usuarios seed creados automaticamente al levantar Docker por primera vez (cada r
 
 ## Esquema de roles en el DBMS
 
-El script `database/tienda_ropa_usuarios.sql` crea cinco roles en PostgreSQL con `CREATE ROLE` y otorga privilegios granulares con `GRANT` / `REVOKE`. Toda escritura transaccional pasa por procedimientos `SECURITY DEFINER`; los roles solo reciben `EXECUTE` sobre los procedimientos que necesitan y `SELECT` sobre tablas/vistas de consulta.
+El script `database/tienda_ropa_usuarios.sql` crea cinco roles en PostgreSQL con `CREATE ROLE` y otorga privilegios granulares con `GRANT` / `REVOKE`. Como los procedimientos son `SECURITY INVOKER`, cada rol recibe `EXECUTE` sobre los procedimientos que necesita **y** los privilegios de tabla acotados que esos procedimientos tocan (nada mas). El backend hace `SET ROLE` al rol del usuario antes de cada `CALL`, de modo que estos permisos se evaluan realmente en el DBMS.
 
-| Rol DBMS | Lectura (SELECT) | Procedimientos (EXECUTE) | Descripcion |
+| Rol DBMS | Privilegios sobre tablas/vistas | Procedimientos (EXECUTE) | Descripcion |
 |---|---|---|---|
-| `db_admin` | todas las tablas y vistas | todos los procedimientos | Acceso total. Unico autorizado a `sp_ajustar_stock` y `sp_actualizar_precios_masivos`. |
-| `db_empleado` | `cliente`, `venta`, `detalle_venta`, `producto`, `categoria` y vistas de reporte | `sp_registrar_venta`, `sp_anular_venta`, `sp_registrar_cliente` | Operacion de punto de venta. No tiene `INSERT/UPDATE` directo sobre tablas transaccionales; todo pasa por SPs. |
-| `db_proveedor` | `categoria`, `producto`, `compra`, `detalle_compra` | `sp_registrar_compra` | Solo registra recepcion de mercancia. No puede modificar `stock_actual` directamente. |
-| `db_auditor` | todas las tablas excepto `usuario` (revocado), mas vistas | ninguno | Solo lectura para reportes y auditoria. No ve `password_hash`. |
-| `db_cliente` | `producto`, `categoria` | ninguno | Acceso minimo al catalogo publico. |
+| `db_admin` | `ALL PRIVILEGES` sobre todas las tablas y secuencias; `SELECT` en vistas | todos los procedimientos | Acceso total. Unico autorizado a `sp_ajustar_stock` y `sp_actualizar_precios_masivos`. |
+| `db_empleado` | `SELECT` en `categoria` y vistas de reporte; `SELECT,INSERT,UPDATE` en `venta`; `SELECT,INSERT` en `detalle_venta` y `cliente`; `SELECT,UPDATE` en `producto`; `INSERT` en `movimiento_inventario` | `sp_registrar_venta`, `sp_anular_venta`, `sp_registrar_cliente` | Operacion de punto de venta. Sus privilegios de escritura estan acotados a lo que ejecutan sus SPs. |
+| `db_proveedor` | `SELECT` en `categoria`; `SELECT,INSERT,UPDATE` en `compra`; `SELECT,INSERT` en `detalle_compra`; `SELECT,UPDATE` en `producto`; `INSERT` en `movimiento_inventario` | `sp_registrar_compra` | Solo registra recepcion de mercancia. |
+| `db_auditor` | `SELECT` en todas las tablas excepto `usuario` (revocado), mas vistas | ninguno | Solo lectura para reportes y auditoria. No ve `password_hash`. |
+| `db_cliente` | `SELECT` en `producto`, `categoria` | ninguno | Acceso minimo al catalogo publico. |
 
 Antes de los `GRANT` se ejecuta `REVOKE EXECUTE ON ALL PROCEDURES IN SCHEMA public FROM PUBLIC` para anular el privilegio que Postgres otorga por defecto a `PUBLIC` sobre nuevos procedimientos.
+
+Se puede comprobar que el enforcement es real (no solo logica de aplicacion) con `psql`:
+
+```sql
+SET ROLE db_cliente;  CALL sp_registrar_venta(1,1,'EFECTIVO','[{"id_producto":1,"cantidad":1}]'::jsonb,NULL);
+-- ERROR: permission denied for procedure sp_registrar_venta
+SET ROLE db_empleado; INSERT INTO usuario(nombre_usuario,password_hash,rol) VALUES('x','x','ADMIN');
+-- ERROR: permission denied for table usuario
+```
 
 ## Variables importantes
 
@@ -104,7 +114,7 @@ El documento `docs/proyecto2_avances.pdf` contiene el diagrama entidad-relacion 
 La SPA esta dividida en `Productos`, `Categorias`, `Clientes`, `Usuarios`, `Ventas` y `Reportes` (acceso desde el menu lateral despues del login).
 
 - **Productos** y **Categorias** exponen el CRUD completo (alta, edicion, eliminacion y listado) contra `/api/productos` y `/api/categorias`. Las pantallas viven en `frontend/src/pages/ProductsPage.jsx` y `CategoriesPage.jsx`.
-- **Ventas** abre el formulario de registro y el listado de ventas. Al confirmar una venta el frontend hace `POST /api/ventas` y el backend ejecuta `CALL sp_registrar_venta(...)` mediante Sequelize (`backend/src/models/ventaModel.js`). La transaccion vive dentro del procedimiento: el SP confirma con `COMMIT` al terminar o ejecuta `ROLLBACK` en su bloque `EXCEPTION` cuando `RAISE EXCEPTION` se dispara por stock insuficiente o producto inexistente. El detalle de cada venta (`/ventas/:id`) se arma con un join entre `venta`, `cliente`, `empleado`, `detalle_venta` y `producto`.
+- **Ventas** abre el formulario de registro y el listado de ventas. Al confirmar una venta el frontend hace `POST /api/ventas` y el backend, tras `SET ROLE` al rol del usuario, ejecuta `CALL sp_registrar_venta(...)` (`backend/src/models/ventaModel.js`). La transaccion vive dentro del procedimiento: el SP confirma con `COMMIT` explicito al terminar o ejecuta `ROLLBACK` explicito (revirtiendo la venta ya insertada) cuando detecta stock insuficiente o producto inexistente, y luego `RAISE EXCEPTION`. El detalle de cada venta (`/ventas/:id`) se arma con un join entre `venta`, `cliente`, `empleado`, `detalle_venta` y `producto`.
 - **Reportes** concentra todas las consultas SQL exigidas. Cada opcion del selector dispara un endpoint y permite descargar el resultado como CSV.
 
 ## Documentación de la API REST (CRUD)

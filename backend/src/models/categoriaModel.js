@@ -1,5 +1,6 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../config/db');
+const { ejecutarProcedimiento } = require('../config/storedProcedure');
 
 // Definición del modelo de categoría
 const Categoria = sequelize.define('Categoria', {
@@ -56,18 +57,11 @@ async function eliminar(id) {
 }
 
 async function actualizarPrecios(id_categoria, porcentaje) {
-  try {
-    const result = await sequelize.query(
-      'CALL sp_actualizar_precios_masivos(:id_categoria, :porcentaje, NULL)',
-      {
-        replacements: { id_categoria, porcentaje },
-        type: sequelize.QueryTypes.RAW
-      }
-    );
-    return true;
-  } catch (err) {
-    throw err;
-  }
+  await ejecutarProcedimiento(
+    'CALL sp_actualizar_precios_masivos(:id_categoria, :porcentaje, NULL)',
+    { id_categoria, porcentaje }
+  );
+  return true;
 }
 
 module.exports = { Categoria, listarTodas, obtenerPorId, crear, actualizar, eliminar, actualizarPrecios };

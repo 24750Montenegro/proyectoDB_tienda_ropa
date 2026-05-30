@@ -1,40 +1,26 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../config/db');
+const { ejecutarProcedimiento } = require('../config/storedProcedure');
 
-// Transaccion explicita manejada INTERNAMENTE por el Procedimiento Almacenado
+// Transaccion explicita manejada INTERNAMENTE por el Procedimiento Almacenado.
+// Se invoca bajo el rol de BD del usuario (SET ROLE) via ejecutarProcedimiento.
 async function registrar({ id_cliente, id_empleado, metodo_pago, items }) {
-  try {
-    await sequelize.query(
-      'CALL sp_registrar_venta(:id_cliente, :id_empleado, :metodo_pago, :items::jsonb, NULL)',
-      {
-        replacements: { 
-          id_cliente, 
-          id_empleado, 
-          metodo_pago, 
-          items: JSON.stringify(items) 
-        },
-        type: sequelize.QueryTypes.RAW
-      }
-    );
-    return true;
-  } catch (err) {
-    throw err;
-  }
+  const result = await ejecutarProcedimiento(
+    'CALL sp_registrar_venta(:id_cliente, :id_empleado, :metodo_pago, :items::jsonb, NULL)',
+    {
+      id_cliente,
+      id_empleado,
+      metodo_pago,
+      items: JSON.stringify(items)
+    }
+  );
+  // El SP devuelve el id generado en su parametro INOUT (columna p_id_venta).
+  return result.rows?.[0]?.p_id_venta ?? null;
 }
 
 async function anular(id_venta) {
-  try {
-    await sequelize.query(
-      'CALL sp_anular_venta(:id_venta)',
-      {
-        replacements: { id_venta },
-        type: sequelize.QueryTypes.RAW
-      }
-    );
-    return true;
-  } catch (err) {
-    throw err;
-  }
+  await ejecutarProcedimiento('CALL sp_anular_venta(:id_venta)', { id_venta });
+  return true;
 }
 
 async function listarTodas() {

@@ -1,6 +1,24 @@
 -- Procedimientos transaccionales invocados desde el backend.
+--
+-- Notas sobre el control de transacciones en PL/pgSQL:
+--
+-- 1) PostgreSQL NO permite COMMIT/ROLLBACK dentro de un bloque que tiene una
+--    clausula EXCEPTION (ese bloque abre una subtransaccion y daria el error
+--    "cannot commit while a subtransaction is active"). Por eso el control de
+--    transaccion (COMMIT/ROLLBACK explicitos) vive en el bloque externo, sin
+--    manejador, y el manejo de excepciones se hace en bloques anidados que no
+--    controlan la transaccion. Las validaciones que lanzan RAISE EXCEPTION sin
+--    ROLLBACK explicito revierten igual: al propagarse al nivel superior (CALL)
+--    la transaccion se aborta automaticamente.
+--
+-- 2) Un procedimiento SECURITY DEFINER (o con clausula SET, p. ej. search_path)
+--    se ejecuta en contexto atomico y TAMPOCO puede usar COMMIT/ROLLBACK. Por
+--    eso estos procedimientos son SECURITY INVOKER (corren con los privilegios
+--    del rol que hace CALL). El backend hace SET ROLE al rol del usuario antes
+--    de invocarlos, de modo que los GRANT por tabla y EXECUTE definidos en
+--    tienda_ropa_usuarios.sql se evaluan realmente en el DBMS.
 
--- 1. Registrar venta con transaccion explicita interna y excepciones
+-- 1. Registrar venta con transaccion explicita interna y manejo de excepciones
 CREATE OR REPLACE PROCEDURE sp_registrar_venta(
   p_id_cliente   INT,
   p_id_empleado  INT,
@@ -9,8 +27,6 @@ CREATE OR REPLACE PROCEDURE sp_registrar_venta(
   INOUT p_id_venta INT DEFAULT NULL
 )
 LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public, pg_temp
 AS $$
 DECLARE
   v_item        JSONB;
@@ -24,9 +40,17 @@ BEGIN
     RAISE EXCEPTION 'La venta debe incluir al menos un producto';
   END IF;
 
-  INSERT INTO venta (id_cliente, id_empleado, metodo_pago, total, estado)
-  VALUES (p_id_cliente, p_id_empleado, p_metodo_pago, 0, 'PAGADA')
-  RETURNING id_venta INTO p_id_venta;
+  -- Manejo de excepciones: bloque anidado que traduce una violacion de llave
+  -- foranea (cliente o empleado inexistente) en un mensaje claro. No controla
+  -- la transaccion porque eso solo se permite en el bloque externo.
+  BEGIN
+    INSERT INTO venta (id_cliente, id_empleado, metodo_pago, total, estado)
+    VALUES (p_id_cliente, p_id_empleado, p_metodo_pago, 0, 'PAGADA')
+    RETURNING id_venta INTO p_id_venta;
+  EXCEPTION
+    WHEN foreign_key_violation THEN
+      RAISE EXCEPTION 'Cliente % o empleado % no es valido', p_id_cliente, p_id_empleado;
+  END;
 
   FOR v_item IN SELECT * FROM jsonb_array_elements(p_items)
   LOOP
@@ -34,6 +58,7 @@ BEGIN
     v_cantidad    := (v_item->>'cantidad')::INT;
 
     IF v_cantidad IS NULL OR v_cantidad <= 0 THEN
+      ROLLBACK;
       RAISE EXCEPTION 'Cantidad invalida para producto %', v_id_producto;
     END IF;
 
@@ -45,10 +70,13 @@ BEGIN
       FOR UPDATE;
 
     IF NOT FOUND THEN
+      ROLLBACK;
       RAISE EXCEPTION 'Producto % no existe', v_id_producto;
     END IF;
 
     IF v_stock < v_cantidad THEN
+      -- Transaccion explicita con ROLLBACK: revierte la venta ya insertada
+      ROLLBACK;
       RAISE EXCEPTION 'Stock insuficiente para producto % (disponible: %, requerido: %)',
         v_id_producto, v_stock, v_cantidad;
     END IF;
@@ -67,14 +95,9 @@ BEGIN
   END LOOP;
 
   UPDATE venta SET total = v_total WHERE id_venta = p_id_venta;
-  
-  -- Confirmar la transacciÃ³n explÃcitamente
+
+  -- Confirmacion explicita de la transaccion
   COMMIT;
-EXCEPTION
-  WHEN OTHERS THEN
-    -- TransacciÃ³n explÃcita con ROLLBACK
-    ROLLBACK;
-    RAISE;
 END;
 $$;
 
@@ -87,8 +110,6 @@ CREATE OR REPLACE PROCEDURE sp_registrar_compra(
   INOUT p_id_compra INT DEFAULT NULL
 )
 LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public, pg_temp
 AS $$
 DECLARE
   v_item        JSONB;
@@ -112,15 +133,18 @@ BEGIN
     v_precio      := (v_item->>'precio_unitario')::DECIMAL(10,2);
 
     IF v_cantidad IS NULL OR v_cantidad <= 0 THEN
+      ROLLBACK;
       RAISE EXCEPTION 'Cantidad invalida para producto %', v_id_producto;
     END IF;
 
     IF v_precio IS NULL OR v_precio < 0 THEN
+      ROLLBACK;
       RAISE EXCEPTION 'Precio invalido para producto %', v_id_producto;
     END IF;
 
     PERFORM 1 FROM producto WHERE id_producto = v_id_producto;
     IF NOT FOUND THEN
+      ROLLBACK;
       RAISE EXCEPTION 'Producto % no existe', v_id_producto;
     END IF;
 
@@ -139,10 +163,6 @@ BEGIN
 
   UPDATE compra SET total = v_total WHERE id_compra = p_id_compra;
   COMMIT;
-EXCEPTION
-  WHEN OTHERS THEN
-    ROLLBACK;
-    RAISE;
 END;
 $$;
 
@@ -151,15 +171,13 @@ CREATE OR REPLACE PROCEDURE sp_anular_venta(
   p_id_venta INT
 )
 LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public, pg_temp
 AS $$
 DECLARE
   v_estado VARCHAR;
   v_registro RECORD;
 BEGIN
   SELECT estado INTO v_estado FROM venta WHERE id_venta = p_id_venta;
-  
+
   IF NOT FOUND THEN
     RAISE EXCEPTION 'La venta % no existe.', p_id_venta;
   END IF;
@@ -177,45 +195,35 @@ BEGIN
     INSERT INTO movimiento_inventario (id_producto, tipo, cantidad, motivo, referencia_doc)
     VALUES (v_registro.id_producto, 'ENTRADA', v_registro.cantidad, 'Anulacion de venta', 'VENTA-' || p_id_venta);
   END LOOP;
-  
+
   COMMIT;
-EXCEPTION
-  WHEN OTHERS THEN
-    ROLLBACK;
-    RAISE;
 END;
 $$;
 
--- 4. Actualizar masivamente precios de una categoria (ParÃ¡metros E/S e implementaciÃ³n requerida)
+-- 4. Actualizar masivamente precios de una categoria (parametro de salida INOUT)
 CREATE OR REPLACE PROCEDURE sp_actualizar_precios_masivos(
   p_id_categoria INT,
   p_porcentaje DECIMAL,
   INOUT p_filas_afectadas INT DEFAULT NULL
 )
 LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public, pg_temp
 AS $$
 BEGIN
   IF p_porcentaje < -90 THEN
     RAISE EXCEPTION 'No se puede disminuir el precio mas del 90%% de una vez';
   END IF;
 
-  UPDATE producto 
+  UPDATE producto
   SET precio_venta = precio_venta * (1 + (p_porcentaje / 100))
   WHERE id_categoria = p_id_categoria;
 
   GET DIAGNOSTICS p_filas_afectadas = ROW_COUNT;
-  
+
   COMMIT;
-EXCEPTION
-  WHEN OTHERS THEN
-    ROLLBACK;
-    RAISE;
 END;
 $$;
 
--- 5. Registrar nuevo cliente (Sp basico con transaccion)
+-- 5. Registrar nuevo cliente (SP basico con transaccion y parametro de salida)
 CREATE OR REPLACE PROCEDURE sp_registrar_cliente(
   p_dpi_nit VARCHAR,
   p_nombre VARCHAR,
@@ -226,8 +234,6 @@ CREATE OR REPLACE PROCEDURE sp_registrar_cliente(
   INOUT p_id_cliente INT DEFAULT NULL
 )
 LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public, pg_temp
 AS $$
 BEGIN
   IF p_nombre IS NULL OR p_apellido IS NULL THEN
@@ -239,10 +245,6 @@ BEGIN
   RETURNING id_cliente INTO p_id_cliente;
 
   COMMIT;
-EXCEPTION
-  WHEN OTHERS THEN
-    ROLLBACK;
-    RAISE;
 END;
 $$;
 
@@ -252,8 +254,6 @@ CREATE OR REPLACE PROCEDURE sp_ajustar_stock(
   p_nuevo_stock INT
 )
 LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public, pg_temp
 AS $$
 BEGIN
   IF p_nuevo_stock < 0 THEN
@@ -270,10 +270,5 @@ BEGIN
   VALUES (p_id_producto, 'ENTRADA', p_nuevo_stock, 'Ajuste de inventario manual', 'AJUSTE');
 
   COMMIT;
-EXCEPTION
-  WHEN OTHERS THEN
-    ROLLBACK;
-    RAISE;
 END;
 $$;
-
